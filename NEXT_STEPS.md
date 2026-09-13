@@ -1,7 +1,15 @@
 # 따라 하기: winget 배포부터 Pro 판매까지
 
 각 단계는 **[사용자]** 가 직접 하는 일과 **[Claude]** 가 하는 일로 나뉩니다. 사용자 단계가 끝나면 채팅에 "N단계 완료"라고 알려주세요. 그러면 제가 다음 단계를 이어갑니다.
-현재 위치: **6단계** (2026-09-13. 1·2·3·5단계 완료. GitHub 저장소 jaelog11/FoldeClean, Release v0.1.0 게시, zip 해시와 매니페스트 일치 확인. 남은 사용자 작업: 4단계 백신 검사, 6단계 설치 시험)
+현재 위치: **7단계 직전** (2026-09-13. 1·2·3·4·5단계 완료. GitHub 저장소 jaelog11/FoldeClean, Release v0.1.0 게시, 해시 일치 확인)
+
+### 4단계 백신 검사 결과 (2026-09-13, VirusTotal)
+탐지 7건, 모두 같은 서명 `Gen:Heur.Ransom.HiddenTears.1`:
+Arcabit · BitDefender · CTX · Emsisoft · eScan · GData · VIPRE
+
+**이 7곳은 모두 Bitdefender 엔진을 쓰는 제품군입니다. 실제로는 한 엔진의 오탐이 7번 표시된 것입니다.**
+Microsoft Defender는 탐지하지 않았습니다 → winget 저장소의 검증 파이프라인(Defender 사용)은 통과할 전망이라 제출을 진행합니다.
+Bitdefender에 오탐 신고를 넣어 두고, 처리되면 7곳이 함께 해제됩니다.
 
 ---
 

@@ -10,7 +10,9 @@
 - [x] 첫 실행 안내 화면 (4개 언어)
 - [x] 오류 보고서 저장 버튼 + 오류 로그
 - [x] 라이선스(LICENSE.txt), winget 매니페스트 3종, 배포 묶음 스크립트(release.ps1)
-- [ ] 백신 예외 등록 후 빌드 → VirusTotal 확인 → 오탐 신고 (Bitdefender, Microsoft 등)
+- [x] 백신 예외 등록 후 빌드 → VirusTotal 확인 (탐지 7건이나 전부 Bitdefender 엔진 제품군, Microsoft는 미탐지)
+- [ ] Bitdefender 오탐 신고 → 처리되면 Arcabit·CTX·Emsisoft·eScan·GData·VIPRE 도 함께 해제
+- [ ] 오탐 유발 요소 줄이기: 레지스트리 자동 실행(Run) 키 읽기를 빼거나 지연 로딩. 악성코드의 지속성 확보 패턴과 같아 휴리스틱 점수를 크게 올림. App Paths·Uninstall 키만으로도 프로그램 경로 보호는 대부분 가능
 - [ ] 다른 환경 시험: OneDrive/구글 드라이브 폴더, 네트워크 드라이브, 외장 하드, 권한 없는 폴더, 긴 경로, 이모지 파일명
 - [ ] GitHub 저장소 + Release(zip 첨부) → `winget validate` → winget-pkgs 에 Pull Request
 - [ ] 영어 설명서(README.en.md)와 문의 창구(GitHub Issues)
