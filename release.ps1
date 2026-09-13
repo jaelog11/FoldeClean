@@ -9,7 +9,7 @@ $ErrorActionPreference = 'Stop'
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $here
 
-$csproj = Get-Content "$here\FoldeClean\FoldeClean.csproj" -Raw
+$csproj = [IO.File]::ReadAllText("$here\FoldeClean\FoldeClean.csproj", [Text.Encoding]::UTF8)
 $ver = [regex]::Match($csproj, '<Version>([^<]+)</Version>').Groups[1].Value
 if (-not $ver) { throw "csproj 에서 <Version> 을 찾지 못했습니다." }
 # winget 은 세 자리 버전을 권장하므로 0.1 → 0.1.0
@@ -35,7 +35,7 @@ Write-Host "   $zip"; Write-Host "   SHA256 $sha"
 Write-Host "== 3/3 winget 매니페스트"
 $mdir = "$rel\manifests\j\Jaelog\FoldeClean\$wver"; New-Item -ItemType Directory -Force $mdir | Out-Null
 Get-ChildItem "$here\winget\*.yaml" | ForEach-Object {
-    $txt = Get-Content $_.FullName -Raw
+    $txt = [IO.File]::ReadAllText($_.FullName, [Text.Encoding]::UTF8)
     $txt = $txt.Replace('__VERSION__', $wver).Replace('__GITHUB_USER__', $GitHubUser).Replace('__SHA256__', $sha)
     $txt = ($txt -split "`n" | Where-Object { $_ -notmatch '^\s*#' }) -join "`n"
     [IO.File]::WriteAllText("$mdir\$($_.Name)", $txt, (New-Object Text.UTF8Encoding $false))
