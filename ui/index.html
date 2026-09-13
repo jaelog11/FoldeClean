@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FoldeClean</title>
+<link rel="icon" href="icon.png">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <img class="logo" src="icon.png" alt="" width="38" height="38">
+      <div><div class="brand-name">FoldeClean</div><div class="brand-sub" data-i18n="app.sub"></div></div>
+    </div>
+    <nav class="steps" id="steps">
+      <button class="step active" data-step="1"><span class="num">1</span><span><b data-i18n="step.1"></b><small data-i18n="step.1.s"></small></span></button>
+      <button class="step" data-step="2" disabled><span class="num">2</span><span><b data-i18n="step.2"></b><small data-i18n="step.2.s"></small></span></button>
+      <button class="step" data-step="3" disabled><span class="num">3</span><span><b data-i18n="step.3"></b><small data-i18n="step.3.s"></small></span></button>
+      <button class="step" data-step="4" disabled><span class="num">4</span><span><b data-i18n="step.4"></b><small data-i18n="step.4.s"></small></span></button>
+      <button class="step" data-step="5" disabled><span class="num">5</span><span><b data-i18n="step.5"></b><small data-i18n="step.5.s"></small></span></button>
+    </nav>
+    <div class="side-foot">
+      <button class="ghost small" id="btnJournals" data-i18n="side.journals"></button>
+      <button class="ghost small" id="btnReport" data-i18n="side.report" data-i18n-title="side.report.s"></button>
+      <div class="hint" data-i18n="side.hint"></div>
+      <label class="langbox"><span data-i18n="side.lang"></span><select id="langSel" class="input"></select></label>
+      <div class="version" id="version" title="">FoldeClean</div>
+      <div class="owner" id="owner"></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- 1. 폴더 -->
+    <section class="panel active" id="p1">
+      <header class="ph"><h1 data-i18n="p1.title"></h1><p data-i18n="p1.sub"></p></header>
+      <div class="card">
+        <div class="row">
+          <input id="rootInput" class="input grow" data-i18n-ph="p1.ph" spellcheck="false">
+          <button class="ghost" id="btnPick" data-i18n="p1.pick"></button>
+          <button class="primary" id="btnScan" data-i18n="p1.scan"></button>
+        </div>
+        <div class="chips" id="quickFolders"></div>
+        <label class="check"><input type="checkbox" id="optLocks" checked> <span data-i18n="p1.locks"></span> <small data-i18n="p1.locks.s"></small></label>
+      </div>
+      <div class="grid3 info-cards">
+        <div class="card mini"><div class="ic">🔗</div><b data-i18n="p1.c1"></b><p data-i18n="p1.c1.s"></p></div>
+        <div class="card mini"><div class="ic">🧭</div><b data-i18n="p1.c2"></b><p data-i18n="p1.c2.s"></p></div>
+        <div class="card mini"><div class="ic">↩️</div><b data-i18n="p1.c3"></b><p data-i18n="p1.c3.s"></p></div>
+      </div>
+    </section>
+
+    <!-- 2. 검사 -->
+    <section class="panel" id="p2">
+      <header class="ph"><h1 data-i18n="p2.title"></h1><p id="scanRoot"></p></header>
+      <div class="tiles" id="tiles"></div>
+      <div class="grid2">
+        <div class="card"><h3 data-i18n="p2.comp"></h3><div id="catBars" class="bars"></div></div>
+        <div class="card"><h3 data-i18n="p2.risk"></h3><div class="donut-wrap"><svg id="donut" viewBox="0 0 120 120"></svg><div class="legend" id="riskLegend"></div></div>
+          <p class="muted" data-i18n="p2.risk.note"></p></div>
+      </div>
+      <div class="card"><div class="row between"><h3><span data-i18n="p2.flagged"></span> <span class="badge" id="flaggedCount"></span></h3><input class="input" id="flagFilter" data-i18n-ph="p2.flag.ph" style="max-width:260px"></div>
+        <div class="list groups" id="flaggedList"></div></div>
+      <div class="actions"><button class="ghost" data-go="1" data-i18n="p2.back"></button><button class="primary" data-go="3" data-i18n="p2.next"></button></div>
+    </section>
+
+    <!-- 3. 방식 -->
+    <section class="panel" id="p3">
+      <header class="ph"><h1 data-i18n="p3.title"></h1><p data-i18n="p3.sub"></p></header>
+      <div class="strat-layout">
+        <div class="strat-grid" id="stratGrid"></div>
+        <div class="card strat-detail" id="stratDetail"></div>
+      </div>
+      <div class="actions"><button class="ghost" data-go="2" data-i18n="p3.back"></button><button class="primary" id="btnPlan" data-i18n="p3.next"></button></div>
+    </section>
+
+    <!-- 4. 미리보기 -->
+    <section class="panel" id="p4">
+      <header class="ph"><h1 data-i18n="p4.title"></h1><p id="planSummary"></p></header>
+      <div class="card"><div class="row between"><h3><span data-i18n="p4.flow"></span> <small class="muted" data-i18n="p4.flow.s"></small></h3>
+        <label class="check"><input type="checkbox" id="animToggle" checked> <span data-i18n="p4.anim"></span></label></div>
+        <div class="flow-wrap"><svg id="flow"></svg></div></div>
+      <div class="grid2">
+        <div class="card"><h3 data-i18n="p4.tree"></h3><div class="tree" id="tree"></div></div>
+        <div class="card"><div class="row between"><h3><span data-i18n="p4.moves"></span> <span class="badge" id="moveCount"></span></h3><input class="input" id="moveFilter" data-i18n-ph="p4.move.ph" style="max-width:220px"></div>
+          <p class="muted small" style="margin:0 0 8px" data-i18n="p4.help"></p>
+          <div class="vlist" id="moveList"><div class="vspacer" id="vspacer"></div><div class="vrows" id="vrows"></div></div>
+          <div class="row"><button class="ghost small" id="btnExclude" data-i18n="p4.exclude"></button><span class="muted small" id="selInfo"></span></div></div>
+      </div>
+      <div class="actions"><button class="ghost" data-go="3" data-i18n="p4.back"></button><button class="primary danger" id="btnExec" data-i18n="p4.exec"></button></div>
+    </section>
+
+    <!-- 5. 실행 -->
+    <section class="panel" id="p5">
+      <header class="ph"><h1 id="execTitle"></h1><p id="execSub"></p></header>
+      <div class="card">
+        <div class="progress"><div class="bar" id="execBar"></div></div>
+        <div class="row between"><span id="execText" class="muted"></span><button class="ghost small" id="btnCancel" data-i18n="p5.cancel"></button></div>
+        <div class="done-anim" id="doneAnim" hidden><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24"/><path d="M14 27l8 8 16-16"/></svg><div data-i18n="p5.finished"></div></div>
+      </div>
+      <div class="actions"><button class="ghost" id="btnOpenRoot" data-i18n="p5.open"></button><button class="ghost" id="btnUndoLast" data-i18n="p5.undolast"></button><button class="primary" data-go="1" data-i18n="p5.new"></button></div>
+    </section>
+  </main>
+
+  <div class="modal" id="journalModal" hidden><div class="modal-card"><div class="row between"><h3 data-i18n="j.title"></h3><button class="ghost small" id="btnCloseJ" data-i18n="j.close"></button></div><div id="journalList" class="list"></div></div></div>
+
+  <!-- 첫 실행 안내 -->
+  <div class="modal" id="welcome" hidden><div class="modal-card welcome">
+    <img src="icon.png" alt="" width="56" height="56">
+    <h2 data-i18n="w.title"></h2>
+    <ol>
+      <li data-i18n="w.1"></li>
+      <li data-i18n="w.2"></li>
+      <li data-i18n="w.3"></li>
+      <li data-i18n="w.4"></li>
+    </ol>
+    <p class="muted small" data-i18n="w.privacy"></p>
+    <div class="row between"><label class="langbox"><span data-i18n="side.lang"></span><select id="langSelW" class="input"></select></label><button class="primary" id="btnWelcomeOk" data-i18n="w.ok"></button></div>
+  </div></div>
+
+  <div class="overlay" id="busy" hidden><div class="busy-card"><div class="spinner"></div><div id="busyText"></div><div class="progress busy-bar"><div class="bar" id="busyBar"></div></div><div class="row between small muted"><span id="busyPct"></span><span id="busyElapsed"></span></div></div></div>
+  <div class="toast" id="toast" hidden></div>
+</div>
+<script src="i18n.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

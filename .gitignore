@@ -1,0 +1,33 @@
+# 빌드 결과물
+FoldeClean/bin/
+FoldeClean/obj/
+FoldeClean/obj_pub/
+FoldeClean/bin_pub/
+FoldeClean/obj_cli/
+FoldeClean/bin_cli/
+FoldeClean/obj2/
+FoldeClean/bin2/
+FoldeClean/obj3/
+FoldeClean/bin3/
+dist/
+dist_new/
+dist_folder/
+release/
+.vs/
+*.user
+
+# 테스트·실행 중 생기는 것
+sample_data/
+sample_exec/
+selftest.json
+journals/
+__pycache__/
+*.pyc
+
+# 서명 관련 (개인 키·지문은 올리지 않음)
+sign.thumbprint
+FoldeClean-cert.cer
+*.pfx
+
+# Claude 작업 설정
+.claude/

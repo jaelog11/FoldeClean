@@ -1,0 +1,20 @@
+FoldeClean Freeware License / 프리웨어 이용약관
+Copyright (c) 2026 Jaelog By 아지랑이
+
+[한국어]
+1. 이 프로그램은 무료(프리웨어)입니다. 개인과 조직 모두 무상으로 사용할 수 있습니다.
+2. 원본 그대로, 무료로, 이 약관을 포함하여 재배포할 수 있습니다. 판매하거나 다른 프로그램과 묶어 유료로 배포할 수 없습니다.
+3. 프로그램을 수정·역컴파일하여 배포하는 것은 허용하지 않습니다.
+4. 이 프로그램은 파일을 이동합니다. 사용 전 미리보기를 확인하고 중요한 자료는 별도로 백업하세요.
+   이 프로그램은 "있는 그대로" 제공되며, 사용으로 인한 파일 손실이나 손해에 대해 제작자는 어떠한 책임도 지지 않습니다.
+5. 이 프로그램은 어떠한 정보도 외부로 전송하지 않습니다. 이동 기록은 사용자 PC 안(%LOCALAPPDATA%\FoldeClean)에만 저장됩니다.
+
+[English]
+1. This program is freeware. Individuals and organizations may use it free of charge.
+2. You may redistribute it unmodified, free of charge, together with this license. You may not sell it or bundle it into paid distributions.
+3. Modifying or decompiling the program for redistribution is not permitted.
+4. This program moves files. Review the preview before running and keep separate backups of important data.
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. THE AUTHOR IS NOT LIABLE FOR ANY LOSS OF FILES OR OTHER DAMAGES ARISING FROM ITS USE.
+5. This program transmits no data anywhere. Move journals are stored only on the user's PC (%LOCALAPPDATA%\FoldeClean).
+
+Third-party components: Microsoft.Web.WebView2 (BSD-3-Clause), System.IO.Hashing (MIT), .NET Runtime (MIT).

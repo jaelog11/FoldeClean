@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>FoldeClean</AssemblyName>
+    <RootNamespace>FoldeClean</RootNamespace>
+    <!-- 버전은 여기 한 곳만 바꾸면 exe 속성·창 제목·화면에 모두 반영된다 -->
+    <Version>0.1</Version>
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
+    <Product>FoldeClean</Product>
+    <Company>Jaelog By 아지랑이</Company>
+    <Authors>Jaelog By 아지랑이</Authors>
+    <Copyright>© 2026 Jaelog By 아지랑이</Copyright>
+    <Description>안전한 폴더 정리</Description>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <!-- VS가 obj/bin 을 잡고 있을 때 명령줄 빌드가 다른 폴더(obj_cli/bin_cli)를 쓸 수 있도록 모두 소스에서 제외 -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);obj/**;bin/**;obj_cli/**;bin_cli/**;obj2/**;bin2/**;obj3/**;bin3/**;obj_pub/**;bin_pub/**</DefaultItemExcludes>
+    <!-- 단독 실행 exe 설정 (dotnet publish 시 적용) -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.*" />
+    <PackageReference Include="System.IO.Hashing" Version="9.0.*" />
+  </ItemGroup>
+
+  <!-- 화면 파일(HTML/CSS/JS)을 exe 안에 포함 -->
+  <ItemGroup>
+    <Resource Include="app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\ui\index.html" LogicalName="ui/index.html" />
+    <EmbeddedResource Include="..\ui\icon.png" LogicalName="ui/icon.png" />
+    <EmbeddedResource Include="..\ui\app.css" LogicalName="ui/app.css" />
+    <EmbeddedResource Include="..\ui\app.js" LogicalName="ui/app.js" />
+    <EmbeddedResource Include="..\ui\i18n.js" LogicalName="ui/i18n.js" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,18 @@
+# winget 설치 매니페스트. release.cmd 가 버전·주소·해시를 채운다.
+# 제출: https://github.com/microsoft/winget-pkgs  (manifests/j/Jaelog/FoldeClean/<버전>/ 에 세 파일)
+PackageIdentifier: Jaelog.FoldeClean
+PackageVersion: __VERSION__
+InstallerType: zip
+NestedInstallerType: portable
+NestedInstallerFiles:
+  - RelativeFilePath: FoldeClean.exe
+    PortableCommandAlias: foldeclean
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/__GITHUB_USER__/FoldeClean/releases/download/v__VERSION__/FoldeClean-__VERSION__-win-x64.zip
+    InstallerSha256: __SHA256__
+Dependencies:
+  PackageDependencies:
+    - PackageIdentifier: Microsoft.DotNet.DesktopRuntime.10
+ManifestType: installer
+ManifestVersion: 1.6.0

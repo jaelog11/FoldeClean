@@ -1,0 +1,5 @@
+PackageIdentifier: Jaelog.FoldeClean
+PackageVersion: __VERSION__
+DefaultLocale: ko-KR
+ManifestType: version
+ManifestVersion: 1.6.0
