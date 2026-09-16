@@ -93,14 +93,23 @@ public partial class App : Application
                 ["prefix_keeps_space"] = prefixed?.StartsWith("[Z] ") ?? false,
                 ["multi_cond_hits"] = ruled.Moves.Count(m => m.Rule == "큰 동영상"),
             };
+            // 우리가 건드리지 않는 빈 폴더가 실행·되돌리기 후에도 살아남아야 한다
+            var bystander = new[] { Path.Combine(root, "_그대로둘폴더"), Path.Combine(root, "_보관", "가", "나") };
+            foreach (var b in bystander) Directory.CreateDirectory(b);
+
             var plan = Planner.Build(scan.Files, root, Strategies.Make("type_date", new()), false, new(), 0);
             var ex = new Executor();
             var jpath = ex.Run(plan.Moves, true, root);
             log["executed"] = ex.Snapshot();
+            log["bystander_dirs_kept"] = bystander.Count(Directory.Exists);
+            log["bystander_dirs_total"] = bystander.Length;
             // 한 줄 기록(.jsonl)만으로 복구되는지도 확인
             var recovered = Executor.RecoverFromLog(Path.ChangeExtension(jpath, ".jsonl"));
             log["jsonl_recover_entries"] = recovered?.Entries.Count;
             log["undo"] = ex.Undo(jpath);
+            log["bystander_dirs_after_undo"] = bystander.Count(Directory.Exists);
+            foreach (var b in bystander.OrderByDescending(x => x.Length)) { try { Directory.Delete(b); } catch { } }
+            try { Directory.Delete(Path.Combine(root, "_보관")); } catch { }
             var after = Scanner.Scan(root).Files.Select(f => f.Path).OrderBy(p => p, StringComparer.Ordinal).ToList();
             log["restored_identical"] = before.SequenceEqual(after);
             log["ok"] = true;

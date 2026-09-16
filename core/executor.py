@@ -57,7 +57,7 @@ class Executor:
                 self._write(jpath, journal); last_flush = time.perf_counter()
         removed = []
         if remove_empty_dirs and root:
-            removed = self._remove_empty(root)
+            removed = self._remove_emptied([os.path.dirname(e["src"]) for e in journal["entries"]], root)
         journal["removed_dirs"] = removed
         self._write(jpath, journal)
         with self.lock:
@@ -74,25 +74,49 @@ class Executor:
         os.replace(tmp, path)
 
     @staticmethod
-    def _remove_empty(root: str) -> list[str]:
-        removed = []
-        for cur, dirs, files in os.walk(root, topdown=False):
-            if cur == root:
-                continue
-            try:
-                if not os.listdir(cur):
-                    os.rmdir(cur); removed.append(cur)
-            except OSError:
-                pass
+    def _remove_emptied(touched_dirs, root: str) -> list[str]:
+        """우리가 파일을 빼내서 비게 된 폴더만 지운다. root 자체와 root 밖은 건드리지 않는다."""
+        removed: list[str] = []
+        root_n = os.path.normpath(os.path.abspath(root)).rstrip(os.sep)
+        seen: set[str] = set()
+        for start in sorted({d for d in touched_dirs if d}, key=len, reverse=True):
+            cur = start
+            while cur:
+                n = os.path.normpath(os.path.abspath(cur)).rstrip(os.sep)
+                if n.lower() == root_n.lower():
+                    break
+                if not n.lower().startswith(root_n.lower() + os.sep):
+                    break
+                if n.lower() in seen:
+                    break
+                seen.add(n.lower())
+                try:
+                    if not os.path.isdir(cur):
+                        cur = os.path.dirname(cur)
+                        continue
+                    if os.listdir(cur):
+                        break
+                    os.rmdir(cur)
+                    removed.append(cur)
+                except OSError:
+                    break
+                cur = os.path.dirname(cur)
         return removed
 
     def undo(self, journal_path: str, on_progress=None) -> dict:
         with open(journal_path, encoding="utf-8") as f:
             journal = json.load(f)
         entries = journal.get("entries", [])
-        ok = fail = 0
+        ok = fail = dirs_back = 0
         with self.lock:
             self.state.update(running=True, done=0, total=len(entries), failed=0, current="되돌리는 중", finished=False)
+        # 정리하면서 지웠던 빈 폴더를 먼저 되살린다
+        for d in sorted(journal.get("removed_dirs", []), key=len):
+            try:
+                if not os.path.isdir(d):
+                    os.makedirs(d, exist_ok=True); dirs_back += 1
+            except OSError:
+                pass
         for i, e in enumerate(reversed(entries)):
             try:
                 if os.path.exists(e["dst"]):
@@ -107,14 +131,14 @@ class Executor:
                 on_progress(self.snapshot())
         # 되돌린 뒤 비게 된 정리 폴더 제거
         if journal.get("root"):
-            self._remove_empty(journal["root"])
+            self._remove_emptied([os.path.dirname(e["dst"]) for e in entries], journal["root"])
         journal["undone"] = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
         self._write(journal_path, journal)
         with self.lock:
             self.state.update(running=False, finished=True)
         if on_progress:
             on_progress(self.snapshot())
-        return {"restored": ok, "failed": fail}
+        return {"restored": ok, "failed": fail, "dirs_restored": dirs_back}
 
 
 def list_journals() -> list[dict]:

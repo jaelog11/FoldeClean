@@ -55,17 +55,55 @@ public sealed class Executor
         File.Move(tmp, path, overwrite: true);
     }
 
-    static List<string> RemoveEmpty(string root)
+    /// <summary>
+    /// 우리가 파일을 빼내서 비게 된 폴더만 지운다. 그 폴더가 비면 위로 한 칸씩 올라가며 계속 확인하되,
+    /// 정리 대상 폴더(root) 자체와 root 밖은 절대 건드리지 않는다.
+    /// 예전에는 root 전체를 훑어 빈 폴더를 모두 지웠는데, 검사하지도 않은 깊은 곳의
+    /// 사용자 폴더까지 사라져서 범위를 이렇게 좁혔다.
+    /// </summary>
+    static List<string> RemoveEmptiedDirs(IEnumerable<string> touchedDirs, string root)
     {
         var removed = new List<string>();
-        IEnumerable<string> dirs;
-        try { dirs = Directory.EnumerateDirectories(root, "*", new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint }).OrderByDescending(d => d.Length).ToList(); }
-        catch { return removed; }
-        foreach (var d in dirs)
+        string Norm(string p) { try { return Path.GetFullPath(p).TrimEnd(Path.DirectorySeparatorChar); } catch { return p; } }
+        var rootN = Norm(root);
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var start in touchedDirs.Where(d => !string.IsNullOrEmpty(d))
+                                         .Distinct(StringComparer.OrdinalIgnoreCase)
+                                         .OrderByDescending(d => d.Length))
         {
-            try { if (!Directory.EnumerateFileSystemEntries(d).Any()) { Directory.Delete(d); removed.Add(d); } } catch { }
+            var cur = start;
+            while (!string.IsNullOrEmpty(cur))
+            {
+                var n = Norm(cur);
+                if (n.Equals(rootN, StringComparison.OrdinalIgnoreCase)) break;                       // 루트는 유지
+                if (!n.StartsWith(rootN + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) break;  // 루트 밖은 건드리지 않음
+                if (!seen.Add(n)) break;
+                try
+                {
+                    if (!Directory.Exists(cur)) { cur = Path.GetDirectoryName(cur); continue; }
+                    if (Directory.EnumerateFileSystemEntries(cur).Any()) break;                       // 아직 무언가 남아 있으면 중단
+                    Directory.Delete(cur);
+                    removed.Add(cur);
+                }
+                catch { break; }
+                cur = Path.GetDirectoryName(cur);
+            }
         }
         return removed;
+    }
+
+    /// <summary>탐색기에 이 폴더가 바뀌었다고 알려 화면을 새로 그리게 한다 (바탕화면이 갱신되지 않는 문제).</summary>
+    [System.Runtime.InteropServices.DllImport("shell32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+    static extern void SHChangeNotify(int eventId, uint flags, string? item1, string? item2);
+    const int SHCNE_UPDATEDIR = 0x00001000;
+    const uint SHCNF_PATHW = 0x0005;
+
+    static void NotifyShell(string? path)
+    {
+        if (string.IsNullOrEmpty(path)) return;
+        try { SHChangeNotify(SHCNE_UPDATEDIR, SHCNF_PATHW, path, null); }
+        catch (Exception ex) { Log.Error("shell notify", ex); }
     }
 
     public string Run(List<MoveRec> moves, bool removeEmptyDirs, string? root)
@@ -94,8 +132,11 @@ public sealed class Executor
                 lock (_lock) { _done = i + 1; _current = m.Name; }
             }
         }
-        if (removeEmptyDirs && root != null) j.RemovedDirs = RemoveEmpty(root);
+        // 우리가 비운 출발 폴더만 정리한다
+        if (removeEmptyDirs && root != null)
+            j.RemovedDirs = RemoveEmptiedDirs(j.Entries.Select(e => Path.GetDirectoryName(e.Src) ?? ""), root);
         WriteJson(jpath, j);
+        NotifyShell(root);
         lock (_lock) { _running = false; _finished = true; }
         return jpath;
     }
@@ -131,8 +172,15 @@ public sealed class Executor
     public Dictionary<string, object?> Undo(string journalPath)
     {
         var j = JsonSerializer.Deserialize<Journal>(File.ReadAllText(journalPath)) ?? new Journal();
-        int ok = 0, fail = 0;
+        int ok = 0, fail = 0, dirsBack = 0;
         lock (_lock) { _running = true; _finished = false; _done = 0; _total = j.Entries.Count; _failed = 0; _current = "undo"; }
+
+        // 정리하면서 지웠던 빈 폴더를 먼저 되살린다 (없으면 파일도 제자리로 못 돌아간다)
+        foreach (var d in j.RemovedDirs.OrderBy(x => x.Length))
+        {
+            try { if (!Directory.Exists(d)) { Directory.CreateDirectory(d); dirsBack++; } } catch (Exception ex) { Log.Error("undo mkdir", ex); }
+        }
+
         for (int i = j.Entries.Count - 1; i >= 0; i--)
         {
             var e = j.Entries[i];
@@ -140,11 +188,14 @@ public sealed class Executor
             catch { fail++; }
             lock (_lock) { _done = j.Entries.Count - i; _failed = fail; }
         }
-        if (j.Root != null) RemoveEmpty(j.Root);
+        // 되돌리면서 비게 된 목적지 폴더만 정리한다
+        if (j.Root != null)
+            RemoveEmptiedDirs(j.Entries.Select(e => Path.GetDirectoryName(e.Dst) ?? ""), j.Root);
         j.Undone = DateTime.Now.ToString("yyyyMMdd_HHmmss");
         WriteJson(journalPath, j);
+        NotifyShell(j.Root);
         lock (_lock) { _running = false; _finished = true; }
-        return new() { ["restored"] = ok, ["failed"] = fail };
+        return new() { ["restored"] = ok, ["failed"] = fail, ["dirs_restored"] = dirsBack };
     }
 
     public static List<Dictionary<string, object?>> ListJournals()
