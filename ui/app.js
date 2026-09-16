@@ -113,6 +113,7 @@ function renderScan(res) {
   const s = res.summary, r = res.risk.stats;
   $('#scanRoot').textContent = s.root;
   renderScanNote(res);
+  state.dupeExact = null;                               // 새 검사이므로 중복 확정값은 버린다
   if (state.strategies.length) renderStrategyCards();   // 중복 예상 배지를 카드에 반영
   $('#tiles').innerHTML = [
     [t('p2.files'), fmtNum(s.file_count) + t('unit.files'), ''], [t('p2.size'), fmtSize(s.total_size), ''],
@@ -188,10 +189,16 @@ const DEMO = () => ({
 });
 async function initStrategies() { state.strategies = await api.strategies(); renderStrategyCards(); selectStrategy(state.strategy); }
 // 중복 예상: 검사할 때 크기만으로 미리 계산해 둔 값. 파일을 읽지 않아 즉시 알 수 있다.
+// 내용까지 확인하면 state.dupeExact 에 담기고, 배지와 안내가 확정값으로 바뀐다.
+const DUPE_AUTO_BYTES = 100 * 1024 * 1024;   // 읽을 양이 이보다 적으면 고르는 즉시 자동 확인
 function dupeBadge(id) {
   if (id !== 'dedupe') return '';
   const h = state.scan && state.scan.dupe_hint;
   if (!h) return '';
+  const ex = state.dupeExact;
+  if (ex) return ex.duplicates
+    ? `<span class="dbadge maybe">${esc(t('dup.found', { n: fmtNum(ex.duplicates) }))}</span>`
+    : `<span class="dbadge none">${esc(t('dup.none'))}</span>`;
   return h.candidates ? `<span class="dbadge maybe">${esc(t('dup.maybe', { n: fmtNum(h.candidates) }))}</span>`
                       : `<span class="dbadge none">${esc(t('dup.none'))}</span>`;
 }
@@ -203,19 +210,26 @@ function renderDupeBlock() {
   const h = state.scan && state.scan.dupe_hint;
   if (!h) return `<div class="dupebox"><span class="muted small">${esc(t('dup.needscan'))}</span></div>`;
   if (!h.candidates) return `<div class="dupebox none">${esc(t('dup.hint.none'))}</div>`;
+  const ex = state.dupeExact;
+  if (ex) return ex.duplicates
+    ? `<div class="dupebox"><b class="ok">${esc(t('dup.confirmed', { groups: fmtNum(ex.groups), n: fmtNum(ex.duplicates), size: fmtSize(ex.reclaim) }))}</b></div>`
+    : `<div class="dupebox none">${esc(t('dup.confirmed0'))}</div>`;
+  const auto = (h.candidate_bytes || 0) <= DUPE_AUTO_BYTES;
   return `<div class="dupebox"><div>${t('dup.hint.some', { n: fmtNum(h.candidates), size: fmtSize(h.max_reclaim) })}</div>
-    <div class="row"><button class="ghost small" id="btnDupeCheck">${esc(t('dup.check'))}</button><span class="small" id="dupeResult"></span></div></div>`;
+    <div class="row">${auto ? `<span class="small muted" id="dupeResult">${esc(t('dup.checking'))}</span>`
+                            : `<button class="ghost small" id="btnDupeCheck">${esc(t('dup.check'))}</button><span class="small" id="dupeResult"></span>`}</div></div>`;
 }
-async function runDupeCheck() {
-  busy(t('dup.checking'));
-  const poll = watchProgress(t('dup.checking'));
+/// 내용을 읽어 확정한다. silent 면 전체 화면 진행 창을 띄우지 않는다(자동 확인).
+async function runDupeCheck(silent) {
+  let poll;
+  if (!silent) { busy(t('dup.checking')); poll = watchProgress(t('dup.checking')); }
   const r = await api.dedupe_check(1024);
-  clearInterval(poll); busy(null);
-  const el = $('#dupeResult'); if (!el) return;
-  if (r.error) { el.textContent = r.error; return; }
-  el.innerHTML = r.duplicates
-    ? `<b class="ok">${esc(t('dup.result', { groups: fmtNum(r.groups), n: fmtNum(r.duplicates), size: fmtSize(r.reclaim) }))}</b>`
-    : esc(t('dup.result0'));
+  if (poll) clearInterval(poll);
+  if (!silent) busy(null);
+  if (r.error) { const el = $('#dupeResult'); if (el) el.textContent = r.error; return; }
+  state.dupeExact = r;
+  renderStrategyCards();                       // 배지를 확정값으로
+  if (state.strategy === 'dedupe') selectStrategy('dedupe');   // 안내도 확정값으로
 }
 function selectStrategy(id) {
   const prev = collectOpts();
@@ -229,7 +243,12 @@ function selectStrategy(id) {
   }).join('');
   $('#stratDetail').innerHTML = `<h3>${esc(t(`strat.${id}.name`))} <span class="badge">${esc(t(`strat.${id}.tag`))}</span></h3><p class="muted" style="margin:0">${esc(t(`strat.${id}.desc`))}</p>${id === 'dedupe' ? renderDupeBlock() : ''}<div class="demo" id="demo"></div><div class="kv"><b>${t('p3.best')}</b><span>${esc(t(`strat.${id}.best`))}</span><b>${t('p3.example')}</b><span>${esc(t(`strat.${id}.ex`))}</span></div><div class="opts">${opts}<label class="opt"><span>${t('p3.warn')}<small>${t('p3.warn.s')}</small></span><input type="checkbox" id="optWarn"></label></div>`;
   $('#optWarn').checked = state.includeWarn; $('#optWarn').onchange = e => state.includeWarn = e.target.checked;
-  const dc = $('#btnDupeCheck'); if (dc) dc.onclick = runDupeCheck;
+  const dc = $('#btnDupeCheck'); if (dc) dc.onclick = () => runDupeCheck(false);
+  // 읽을 양이 적으면 고르는 즉시 자동으로 확정한다 (한 번만)
+  if (id === 'dedupe' && !state.dupeExact && state.scan && state.scan.dupe_hint
+      && state.scan.dupe_hint.candidates && (state.scan.dupe_hint.candidate_bytes || 0) <= DUPE_AUTO_BYTES) {
+    setTimeout(() => runDupeCheck(true), 30);
+  }
   runDemo(id);
 }
 function collectOpts() { const o = {}; $$('#stratDetail [data-k]').forEach(el => o[el.dataset.k] = el.type === 'checkbox' ? el.checked : (el.type === 'number' ? +el.value : el.value)); return o; }
@@ -247,8 +266,24 @@ $('#btnPlan').onclick = async () => {
   const poll = watchProgress(t('busy.planning'));
   const res = await api.build_plan(state.strategy, collectOpts(), state.includeWarn, null, [], 0);
   clearInterval(poll); busy(null); if (res.error) return toast(res.error);
+  // 옮길 파일이 없으면 빈 미리보기로 넘기지 않고, 왜 없는지 그 자리에서 알려 준다
+  if (!res.summary.move_count) { showEmptyPlan(res); return; }
+  $('#planEmpty').hidden = true;
   state.plan = res; state.selected.clear(); renderPlan(res); go(4);
 };
+function showEmptyPlan(res) {
+  const s = res.summary, id = state.strategy;
+  let why;
+  if (id === 'dedupe') why = t('plan.empty.dedupe');
+  else if (id === 'archive_old') why = t('plan.empty.archive');
+  else if (s.skipped_same > 0) why = t('plan.empty.same', { n: fmtNum(s.skipped_same) });
+  else if (s.rule_skips > 0) why = t('plan.empty.rules', { n: fmtNum(s.rule_skips) });
+  else why = t('plan.empty.general');
+  const el = $('#planEmpty');
+  el.innerHTML = `<b>${esc(t('plan.empty.title'))}</b> ${why}`;
+  el.hidden = false;
+  el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
 
 // ---------------------------------------------------------------- 4. 미리보기
 function renderPlan(p) {

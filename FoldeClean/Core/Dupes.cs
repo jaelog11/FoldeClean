@@ -62,6 +62,7 @@ public static class Dupes
             ["candidates"] = groups.Sum(g => g.Count()),          // 크기가 겹치는 파일 수
             ["groups"] = groups.Count,
             ["max_reclaim"] = groups.Sum(g => (long)(g.Count() - 1) * g.Key),   // 전부 중복이라면 줄어들 용량
+            ["candidate_bytes"] = groups.Sum(g => (long)g.Count() * g.Key),     // 확인하려면 읽어야 할 용량
         };
     }
 

@@ -45,6 +45,7 @@ def size_hint(files: list[FileInfo], min_size: int = 1024) -> dict:
         "candidates": sum(groups.values()),
         "groups": len(groups),
         "max_reclaim": sum((n - 1) * s for s, n in groups.items()),
+        "candidate_bytes": sum(n * s for s, n in groups.items()),
     }
 
 
