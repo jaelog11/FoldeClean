@@ -35,7 +35,7 @@ public sealed class Api
         "get_progress" => new Dictionary<string, object?> { ["phase"] = _phase, ["count"] = Interlocked.Read(ref _count), ["total"] = Interlocked.Read(ref _total), ["exec"] = _executor.Snapshot() },
         "pick_folder" => PickFolder?.Invoke(),
         "default_folders" => DefaultFolders(),
-        "scan_folder" => ScanFolder(Arg(args, 0, ""), Arg(args, 1, true)),
+        "scan_folder" => ScanFolder(Arg(args, 0, ""), Arg(args, 1, true), Arg(args, 2, 0)),
         "strategies" => Strategies.Ids.Select(id => new { id }).ToList(),
         "build_plan" => BuildPlan(Arg(args, 0, "type"), Arg(args, 1, new Dictionary<string, JsonElement>()), Arg(args, 2, false), Arg(args, 4, new List<string>()), Arg(args, 5, 0L)),
         "plan_moves" => PlanMoves(Arg(args, 0, 0), Arg(args, 1, 500), Arg(args, 2, "")),
@@ -160,21 +160,26 @@ public sealed class Api
         return c.Where(x => Directory.Exists(x.path)).Select(x => new { key = x.key, label = x.label, path = x.path }).ToList();
     }
 
-    object ScanFolder(string root, bool checkLocks)
+    /// <summary>depth: 0 = 이 폴더의 파일만, 2 = 하위 2단계까지, 50 = 하위 폴더 전부.</summary>
+    object ScanFolder(string root, bool checkLocks, int depth)
     {
         if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) return Err("폴더를 찾을 수 없습니다.");
+        depth = Math.Clamp(depth, 0, 50);
         _phase = "scan"; _count = 0; _total = 0;
-        var res = Scanner.Scan(root, c => Interlocked.Exchange(ref _count, c));
+        var res = Scanner.Scan(root, c => Interlocked.Exchange(ref _count, c), depth);
         _phase = "prepare"; _count = 0; _total = res.Files.Count;      // 바로가기·레지스트리 수집
         var analyzer = new SafetyAnalyzer(root, checkLocks);
         _phase = "analyze";
         var info = analyzer.Analyze(res.Files, i => Interlocked.Exchange(ref _count, i), (n, t) => { _phase = "locks"; Interlocked.Exchange(ref _count, n); Interlocked.Exchange(ref _total, t); });
         _scan = res; _plan = null; _phase = "idle";
         var flagged = res.Files.Where(f => f.Risk != "safe").OrderBy(f => f.Risk != "block").ThenBy(f => f.Path, StringComparer.OrdinalIgnoreCase).ToList();
+        // 이 폴더의 파일만 검사했는데 하위 폴더가 있으면, 몇 개를 건너뛰었는지 알려준다
+        int skippedDirs = depth == 0 ? res.Dirs.Count : 0;
         return new Dictionary<string, object?>
         {
             ["summary"] = res.Summary(), ["risk"] = info, ["categories"] = Categories.Breakdown(res.Files),
             ["flagged"] = flagged.Take(2000).Select(f => f.ToDict()).ToList(), ["flagged_total"] = flagged.Count,
+            ["depth"] = depth, ["skipped_dirs"] = skippedDirs,
         };
     }
 

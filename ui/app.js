@@ -73,7 +73,7 @@ $('#btnReport').onclick = async () => {
   toast(t('report.saved', { path: r.path }), 6000);
 };
 function rerender() {   // 언어가 바뀌면 현재 화면을 새 문구로 다시 그린다
-  applyI18n(); initVersion(); initFolders(); initEdition();
+  applyI18n(); initDepth(); initVersion(); initFolders(); initEdition();
   if (state.scan) renderScan(state.scan);
   if (state.strategies.length) { renderStrategyCards(); selectStrategy(state.strategy); }
   if (state.plan) renderPlan(state.plan);
@@ -89,21 +89,30 @@ async function initFolders() {
   $$('#quickFolders .chip').forEach(c => c.onclick = () => $('#rootInput').value = c.dataset.path);
 }
 $('#btnPick').onclick = async () => { const p = await api.pick_folder(); if (p) $('#rootInput').value = p; else if (!window.pywebview && !wv2) toast(t('toast.browser')); };
-$('#btnScan').onclick = async () => {
+// 검사 범위: 0 = 이 폴더의 파일만(기본), 2 = 하위 2단계, 50 = 전부
+const DEPTHS = [[0, 'p1.depth0'], [2, 'p1.depth2'], [50, 'p1.depthAll']];
+function initDepth() {
+  const sel = $('#optDepth'); const cur = sel.value || '0';
+  sel.innerHTML = DEPTHS.map(([v, k]) => `<option value="${v}" ${String(v) === cur ? 'selected' : ''}>${esc(t(k))}</option>`).join('');
+}
+async function runScan(depth) {
   const root = $('#rootInput').value.trim();
   if (!root) return toast(t('toast.needpath'));
+  if (depth !== undefined) $('#optDepth').value = String(depth);
   state.root = root; busy(t('busy.folder'));
   const poll = watchProgress(t('busy.folder'));
-  const res = await api.scan_folder(root, $('#optLocks').checked);
+  const res = await api.scan_folder(root, $('#optLocks').checked, +$('#optDepth').value);
   clearInterval(poll); busy(null);
   if (res.error) return toast(res.error);
   state.scan = res; renderScan(res); go(2);
-};
+}
+$('#btnScan').onclick = () => runScan();
 
 // ---------------------------------------------------------------- 2. 검사 결과
 function renderScan(res) {
   const s = res.summary, r = res.risk.stats;
   $('#scanRoot').textContent = s.root;
+  renderScanNote(res);
   $('#tiles').innerHTML = [
     [t('p2.files'), fmtNum(s.file_count) + t('unit.files'), ''], [t('p2.size'), fmtSize(s.total_size), ''],
     [t('p2.safe'), fmtNum(r.safe) + t('unit.files'), 'ok'], [t('p2.wb'), `${fmtNum(r.warn)} / ${fmtNum(r.block)}`, r.block ? 'bad' : 'warn'],
@@ -135,6 +144,20 @@ function renderFlagged(items, root) {
     return `<div class="group ${single ? 'single' : ''}">${head}${body}</div>`;
   }).join('');
   $$('#flaggedList .ghead').forEach(h => h.onclick = () => { const g = h.parentElement; if (g.classList.contains('single')) return; const b = $('.gbody', g); b.hidden = !b.hidden; $('.caret', h).textContent = b.hidden ? '▸' : '▾'; });
+}
+// 검사 범위 안내: 하위 폴더를 건너뛰었거나, 반대로 아주 많은 파일을 끌어왔을 때 알려준다
+function renderScanNote(res) {
+  const el = $('#scanNote');
+  const n = res.summary.file_count, skipped = res.skipped_dirs || 0, depth = res.depth ?? 0;
+  if (depth === 0 && skipped > 0) {
+    el.innerHTML = t('p2.note.top', { n: fmtNum(skipped) }) + ` <button id="btnRescanAll">${esc(t('p2.note.all'))}</button>`;
+    el.hidden = false;
+    $('#btnRescanAll').onclick = () => runScan(50);
+  } else if (depth > 0 && n > 20000) {
+    el.innerHTML = t('p2.note.many', { n: fmtNum(n) }) + ` <button id="btnRescanTop">${esc(t('p2.note.toponly'))}</button>`;
+    el.hidden = false;
+    $('#btnRescanTop').onclick = () => runScan(0);
+  } else el.hidden = true;
 }
 function donut(parts) {
   const total = parts.reduce((a, p) => a + p[1], 0) || 1; let acc = 0; const R = 44, C = 2 * Math.PI * R;
@@ -409,6 +432,6 @@ $('#btnRulesSave').onclick = async () => {
 };
 
 // ---------------------------------------------------------------- 시작
-function start() { initLang(); initVersion(); initFolders(); initStrategies(); initEdition(); initWelcome(); }
+function start() { initLang(); initDepth(); initVersion(); initFolders(); initStrategies(); initEdition(); initWelcome(); }
 if (wv2 || (window.pywebview && window.pywebview.api)) start(); else { window.addEventListener('pywebviewready', start, { once: true }); setTimeout(() => { if (!window.pywebview) start(); }, 300); }
 window.addEventListener('resize', () => { if (state.plan && state.step === 4) renderFlow(state.plan.flows, state.plan.src_groups, state.plan.dest_tree); if (state.step === 3) runDemo(state.strategy); });

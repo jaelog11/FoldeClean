@@ -2,6 +2,12 @@
 'use strict';
 const I18N = {
 ko: {
+  'p1.depth': '검사 범위', 'p1.depth.s': '· 하위 폴더 안까지 볼지 정합니다',
+  'p1.depth0': '이 폴더의 파일만', 'p1.depth2': '하위 2단계까지', 'p1.depthAll': '하위 폴더 전부',
+  'p2.note.top': '이 폴더에 바로 있는 파일만 검사했습니다. 하위 폴더 <b>{n}개</b>는 열어 보지 않았습니다. 그 안의 파일은 이미 정리되어 있을 수 있어 기본으로 건드리지 않습니다.',
+  'p2.note.all': '하위 폴더까지 검사',
+  'p2.note.many': '하위 폴더까지 검사해 파일 <b>{n}개</b>를 찾았습니다. 이미 정리해 둔 폴더의 파일까지 밖으로 나올 수 있으니 미리보기를 꼭 확인하세요.',
+  'p2.note.toponly': '이 폴더의 파일만 다시 검사',
   'edition.standard': 'Standard (무료)', 'edition.trial': '체험 {n}일 남음', 'edition.pro': 'Pro',
   'pro.title': 'FoldeClean Pro', 'pro.sub': '무료판의 안전 기능은 그대로 두고, 반복되는 정리를 자동으로 만들어 줍니다.',
   'pro.f1': '<b>내 규칙</b> — 파일명에 영수증이 있으면 문서/영수증으로 보내는 식의 규칙을 정리 방식과 함께 적용',
@@ -80,6 +86,12 @@ ko: {
   'demo.keep': '(그대로)', 'demo.orig': '(원본 유지)',
 },
 en: {
+  'p1.depth': 'Scan scope', 'p1.depth.s': '· how deep to look inside subfolders',
+  'p1.depth0': 'This folder only', 'p1.depth2': 'Two levels down', 'p1.depthAll': 'All subfolders',
+  'p2.note.top': 'Only files sitting directly in this folder were scanned. <b>{n}</b> subfolders were left untouched, since files in them may already be organized.',
+  'p2.note.all': 'Scan subfolders too',
+  'p2.note.many': 'Scanning subfolders found <b>{n}</b> files. Files from folders you already organized can be pulled out, so check the preview carefully.',
+  'p2.note.toponly': 'Rescan this folder only',
   'edition.standard': 'Standard (free)', 'edition.trial': 'Trial, {n} days left', 'edition.pro': 'Pro',
   'pro.title': 'FoldeClean Pro', 'pro.sub': 'Every safety feature stays free. Pro automates the cleanups you repeat.',
   'pro.f1': '<b>Your own rules</b> — send anything whose name contains invoice to Documents/Invoices, applied before the chosen method',
@@ -158,6 +170,12 @@ en: {
   'demo.keep': '(stays)', 'demo.orig': '(original kept)',
 },
 zh: {
+  'p1.depth': '检查范围', 'p1.depth.s': '· 决定是否深入子文件夹',
+  'p1.depth0': '仅此文件夹的文件', 'p1.depth2': '向下两层', 'p1.depthAll': '全部子文件夹',
+  'p2.note.top': '只检查了直接放在此文件夹中的文件。未打开 <b>{n}</b> 个子文件夹，因为其中的文件可能已经整理好了。',
+  'p2.note.all': '连子文件夹一起检查',
+  'p2.note.many': '连子文件夹一起检查共找到 <b>{n}</b> 个文件。已整理好的文件夹中的文件也可能被移出，请务必查看预览。',
+  'p2.note.toponly': '只重新检查此文件夹',
   'edition.standard': 'Standard（免费）', 'edition.trial': '试用，剩余 {n} 天', 'edition.pro': 'Pro',
   'pro.title': 'FoldeClean Pro', 'pro.sub': '所有安全功能保持免费。Pro 让重复的整理自动完成。',
   'pro.f1': '<b>自定义规则</b> — 例如文件名含发票就放到 文档/发票，在所选方式之前生效',
@@ -236,6 +254,12 @@ zh: {
   'demo.keep': '（保持）', 'demo.orig': '（保留原件）',
 },
 ja: {
+  'p1.depth': '検査範囲', 'p1.depth.s': '· サブフォルダの中まで見るかを決めます',
+  'p1.depth0': 'このフォルダのファイルのみ', 'p1.depth2': '2階層下まで', 'p1.depthAll': 'サブフォルダすべて',
+  'p2.note.top': 'このフォルダに直接あるファイルだけを検査しました。サブフォルダ <b>{n}</b> 個は開いていません。中のファイルはすでに整理済みの可能性があるためです。',
+  'p2.note.all': 'サブフォルダも検査',
+  'p2.note.many': 'サブフォルダまで検査して <b>{n}</b> 件のファイルが見つかりました。整理済みフォルダのファイルまで外に出る可能性があるので、プレビューを必ず確認してください。',
+  'p2.note.toponly': 'このフォルダのみ再検査',
   'edition.standard': 'Standard（無料）', 'edition.trial': '試用、残り {n} 日', 'edition.pro': 'Pro',
   'pro.title': 'FoldeClean Pro', 'pro.sub': '安全に関わる機能は無料のまま。Pro は繰り返す整理を自動にします。',
   'pro.f1': '<b>自分のルール</b> — 名前に領収書が入っていたら 書類/領収書 へ、のように選んだ方法より先に適用',

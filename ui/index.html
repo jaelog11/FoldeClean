@@ -43,6 +43,7 @@
           <button class="primary" id="btnScan" data-i18n="p1.scan"></button>
         </div>
         <div class="chips" id="quickFolders"></div>
+        <label class="check"><span data-i18n="p1.depth"></span> <select id="optDepth" class="input" style="width:auto"></select> <small data-i18n="p1.depth.s"></small></label>
         <label class="check"><input type="checkbox" id="optLocks" checked> <span data-i18n="p1.locks"></span> <small data-i18n="p1.locks.s"></small></label>
       </div>
       <div class="grid3 info-cards">
@@ -54,7 +55,7 @@
 
     <!-- 2. 검사 -->
     <section class="panel" id="p2">
-      <header class="ph"><h1 data-i18n="p2.title"></h1><p id="scanRoot"></p></header>
+      <header class="ph"><h1 data-i18n="p2.title"></h1><p id="scanRoot"></p><p class="scan-note" id="scanNote" hidden></p></header>
       <div class="tiles" id="tiles"></div>
       <div class="grid2">
         <div class="card"><h3 data-i18n="p2.comp"></h3><div id="catBars" class="bars"></div></div>

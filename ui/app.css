@@ -51,6 +51,11 @@ button,input{font:inherit;color:inherit}
 .modal-card.welcome{width:min(560px,92vw);text-align:left}.welcome img{display:block;margin:0 auto 10px;border-radius:14px}.welcome h2{text-align:center;margin:0 0 14px;font-size:20px}
 .welcome ol{margin:0 0 12px;padding-left:22px;line-height:1.6}.welcome li{margin-bottom:6px}.welcome li::marker{color:var(--accent);font-weight:700}
 .langbox{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}.langbox select{padding:5px 8px;font-size:12px;border-radius:8px}
+.check select{padding:6px 10px;font-size:12px;border-radius:8px}
+.scan-note{background:color-mix(in srgb,var(--warn) 12%,var(--card));border:1px solid color-mix(in srgb,var(--warn) 40%,var(--line));border-radius:10px;padding:10px 14px;font-size:13px;margin:0 0 14px!important;color:var(--text)}
+.scan-note b{color:var(--warn)}
+.scan-note button{margin-left:8px;background:var(--card2);border:1px solid var(--line);border-radius:7px;padding:4px 10px;font-size:12px;cursor:pointer;color:inherit}
+.scan-note button:hover{border-color:var(--accent)}
 .groups .group{background:var(--card2);border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .ghead{display:grid;grid-template-columns:14px auto 1fr auto;gap:10px;align-items:center;padding:8px 12px;cursor:pointer;font-size:13px}.ghead:hover{background:var(--card)}.group.single .ghead{cursor:default}
 .ghead .caret{color:var(--muted);font-size:11px}.ghead .name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

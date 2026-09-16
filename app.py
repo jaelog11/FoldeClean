@@ -69,11 +69,13 @@ class Api:
         return [{"key": k, "label": l, "path": v} for k, (l, v) in cands.items() if os.path.isdir(v)]
 
     # ---------------------------------------------------------------- 검사
-    def scan_folder(self, root: str, check_locks: bool = True):
+    def scan_folder(self, root: str, check_locks: bool = True, depth: int = 0):
+        """depth: 0 = 이 폴더의 파일만, 2 = 하위 2단계까지, 50 = 하위 폴더 전부."""
         if not root or not os.path.isdir(root):
             return {"error": "폴더를 찾을 수 없습니다."}
+        depth = max(0, min(int(depth or 0), 50))
         self._set_progress("scan", 0, 0)
-        res = scan(root, progress=lambda c: self._set_progress("scan", c, 0))
+        res = scan(root, max_depth=depth, progress=lambda c: self._set_progress("scan", c, 0))
         self._set_progress("analyze", 0, len(res.files))
         analyzer = SafetyAnalyzer(root, check_locks=check_locks)
         info = analyzer.analyze(res.files, progress=lambda i: self._set_progress("analyze", i, len(res.files)))
@@ -85,6 +87,7 @@ class Api:
         return {
             "summary": res.summary(), "risk": info, "categories": category_breakdown(res.files),
             "flagged": flagged[:2000], "flagged_total": len(flagged),
+            "depth": depth, "skipped_dirs": len(res.dirs) if depth == 0 else 0,
         }
 
     def strategies(self):
