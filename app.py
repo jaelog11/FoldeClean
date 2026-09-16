@@ -177,14 +177,25 @@ class Api:
         out["moves_total"] = len(plan["moves"])
         return out
 
-    def plan_moves(self, offset: int = 0, limit: int = 500, query: str = ""):
+    def plan_moves(self, offset: int = 0, limit: int = 500, query: str = "", dest: str = ""):
+        """dest 가 주어지면 그 폴더(하위 포함)로 가는 파일만 추린다."""
         if not self._plan:
-            return []
+            return {"items": [], "total": 0}
         moves = self._plan["moves"]
+        if dest:
+            d = dest.strip().replace("/", os.sep).strip(os.sep).lower()
+            pre = d + os.sep
+            moves = [m for m in moves if m["dst_rel"].lower() == d or m["dst_rel"].lower().startswith(pre)]
         if query:
             q = query.lower()
             moves = [m for m in moves if q in m["name"].lower() or q in m["dst_rel"].lower()]
         return {"items": moves[offset: offset + limit], "total": len(moves)}
+
+    def plan_flows(self, dest: str = ""):
+        if not self._plan:
+            return {"error": "먼저 미리보기를 만드세요."}
+        from core.planner import flows_at
+        return flows_at(self._plan["moves"], dest)
 
     def exclude_moves(self, paths: list[str]):
         if not self._plan:

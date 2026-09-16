@@ -116,6 +116,46 @@ def build_plan(files: list[FileInfo], root: str, strategy: Strategy, dest_root: 
     }
 
 
+def flows_at(moves: list[dict], dest: str = "") -> dict:
+    """흐름도를 한 단계 안으로 들어가서 본다. dest 가 빈 문자열이면 최상위. (C# Planner.Flows 와 동일)"""
+    sep = os.sep
+    dest = (dest or "").strip().replace("/", sep).strip(sep)   # 화면은 / 를 쓸 수 있다
+    prefix = dest + sep if dest else ""
+    if dest:
+        scoped = [m for m in moves
+                  if m["dst_rel"].lower() == dest.lower() or m["dst_rel"].lower().startswith(prefix.lower())]
+    else:
+        scoped = moves
+
+    def rest(m):
+        r = m["dst_rel"] if not dest else (m["dst_rel"][len(prefix):] if len(m["dst_rel"]) > len(prefix) else "")
+        return r.split(sep) if r else []
+
+    flows: dict[tuple[str, str], dict] = defaultdict(lambda: {"count": 0, "size": 0})
+    src_dirs: dict[str, dict] = defaultdict(lambda: {"count": 0, "size": 0})
+    nodes: dict[str, dict] = defaultdict(lambda: {"count": 0, "size": 0})
+    deeper: set[str] = set()
+
+    for m in scoped:
+        parts = rest(m)
+        seg = parts[0] if parts else ""
+        if len(parts) > 1:
+            deeper.add(seg)
+        for d, k in ((flows, (m["src_group"], seg)), (src_dirs, m["src_group"]), (nodes, seg)):
+            d[k]["count"] += 1
+            d[k]["size"] += m["size"]
+
+    return {
+        "path": dest,
+        "crumbs": dest.split(sep) if dest else [],
+        "move_count": len(scoped),
+        "total_size": sum(m["size"] for m in scoped),
+        "flows": [{"src": s, "dst": d, **v} for (s, d), v in sorted(flows.items(), key=lambda kv: -kv[1]["size"])],
+        "src_groups": [{"name": k, **v} for k, v in sorted(src_dirs.items(), key=lambda kv: -kv[1]["size"])],
+        "dest_nodes": [{"name": k, **v, "has_children": k in deeper} for k, v in sorted(nodes.items(), key=lambda kv: -kv[1]["size"])],
+    }
+
+
 def _tree(dest_dirs: dict[str, dict]) -> list[dict]:
     root: dict = {}
     for rel, v in dest_dirs.items():

@@ -2,6 +2,10 @@
 'use strict';
 const I18N = {
 ko: {
+  'p4.root': '전체', 'p4.here': '(이 폴더)',
+  'p4.flow.drill': '오른쪽 폴더를 누르면 한 단계 안으로 들어갑니다. › 표시가 있으면 하위 폴더가 더 있습니다. 위의 경로를 눌러 돌아올 수 있습니다.',
+  'p4.tree.hint': '폴더 이름을 누르면 그 폴더에 들어갈 파일만 오른쪽 목록에 보입니다. 화살표는 접기·펼치기입니다.',
+  'p4.dest.clear': '이 폴더만 보기 해제',
   'dup.checkingShort': '확인 중…',
   'dup.found': '중복 {n}개', 'dup.confirmed': '확인 완료 · {groups}묶음 · 지울 수 있는 파일 {n}개 · {size} 확보',
   'dup.confirmed0': '확인해 보니 내용이 같은 파일은 없습니다. 크기만 같았을 뿐입니다. 다른 방식을 고르세요.',
@@ -101,6 +105,10 @@ ko: {
   'demo.keep': '(그대로)', 'demo.orig': '(원본 유지)',
 },
 en: {
+  'p4.root': 'All', 'p4.here': '(this folder)',
+  'p4.flow.drill': 'Click a folder on the right to go one level in. A › means it has subfolders. Use the path above to come back.',
+  'p4.tree.hint': 'Click a folder name to show only the files going into it. The arrow collapses and expands.',
+  'p4.dest.clear': 'Clear folder filter',
   'dup.checkingShort': 'checking…',
   'dup.found': '{n} duplicates', 'dup.confirmed': 'Confirmed · {groups} groups · {n} files removable · {size} freed',
   'dup.confirmed0': 'Checked: no file has identical content. They only shared a size. Pick another method.',
@@ -200,6 +208,10 @@ en: {
   'demo.keep': '(stays)', 'demo.orig': '(original kept)',
 },
 zh: {
+  'p4.root': '全部', 'p4.here': '（此文件夹）',
+  'p4.flow.drill': '点击右侧文件夹可进入下一层。带 › 表示还有子文件夹。点击上方路径可返回。',
+  'p4.tree.hint': '点击文件夹名称，右侧只显示要放入该文件夹的文件。箭头用于折叠与展开。',
+  'p4.dest.clear': '取消文件夹筛选',
   'dup.checkingShort': '检查中…',
   'dup.found': '重复 {n} 个', 'dup.confirmed': '确认完成 · {groups} 组 · 可删除 {n} 个 · 释放 {size}',
   'dup.confirmed0': '检查后发现没有内容相同的文件，只是大小相同而已。请选择其他方式。',
@@ -299,6 +311,10 @@ zh: {
   'demo.keep': '（保持）', 'demo.orig': '（保留原件）',
 },
 ja: {
+  'p4.root': '全体', 'p4.here': '（このフォルダ）',
+  'p4.flow.drill': '右のフォルダを押すと 1 階層下に入ります。› があればサブフォルダがあります。上の経路を押すと戻れます。',
+  'p4.tree.hint': 'フォルダ名を押すと、そこへ入るファイルだけが右の一覧に表示されます。矢印は折りたたみ・展開です。',
+  'p4.dest.clear': 'フォルダ絞り込みを解除',
   'dup.checkingShort': '確認中…',
   'dup.found': '重複 {n} 件', 'dup.confirmed': '確認完了 · {groups} グループ · 削除できるファイル {n} 件 · {size} 確保',
   'dup.confirmed0': '確認したところ中身が同じファイルはありません。サイズが同じだっただけです。別の方法を選んでください。',

@@ -39,7 +39,8 @@ public sealed class Api
         "scan_folder" => ScanFolder(Arg(args, 0, ""), Arg(args, 1, true), Arg(args, 2, 0)),
         "strategies" => Strategies.Ids.Select(id => new { id }).ToList(),
         "build_plan" => BuildPlan(Arg(args, 0, "type"), Arg(args, 1, new Dictionary<string, JsonElement>()), Arg(args, 2, false), Arg(args, 4, new List<string>()), Arg(args, 5, 0L)),
-        "plan_moves" => PlanMoves(Arg(args, 0, 0), Arg(args, 1, 500), Arg(args, 2, "")),
+        "plan_moves" => PlanMoves(Arg(args, 0, 0), Arg(args, 1, 500), Arg(args, 2, ""), Arg(args, 3, "")),
+        "plan_flows" => PlanFlows(Arg(args, 0, "")),
         "exclude_moves" => ExcludeMoves(Arg(args, 0, new List<string>())),
         "execute" => Execute(Arg(args, 0, true)),
         "cancel" => Cancel(),
@@ -220,13 +221,27 @@ public sealed class Api
         finally { _phase = "idle"; }
     }
 
-    object PlanMoves(int offset, int limit, string query)
+    /// <summary>dest 가 주어지면 그 폴더(하위 포함)로 가는 파일만 추린다. 폴더 구조를 눌렀을 때 쓴다.</summary>
+    object PlanMoves(int offset, int limit, string query, string dest)
     {
         if (_plan == null) return new Dictionary<string, object?> { ["items"] = new List<MoveRec>(), ["total"] = 0 };
         IEnumerable<MoveRec> moves = _plan.Moves;
+        if (!string.IsNullOrEmpty(dest))
+        {
+            var d = dest.Trim().Replace('/', Path.DirectorySeparatorChar).Trim(Path.DirectorySeparatorChar);
+            var prefix = d + Path.DirectorySeparatorChar;
+            moves = moves.Where(m => m.DstRel.Equals(d, StringComparison.OrdinalIgnoreCase)
+                                  || m.DstRel.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+        }
         if (!string.IsNullOrEmpty(query)) { var q = query.ToLowerInvariant(); moves = moves.Where(m => m.Name.ToLowerInvariant().Contains(q) || m.DstRel.ToLowerInvariant().Contains(q)); }
         var list = moves.ToList();
         return new Dictionary<string, object?> { ["items"] = list.Skip(offset).Take(limit).ToList(), ["total"] = list.Count };
+    }
+
+    object PlanFlows(string dest)
+    {
+        if (_plan == null) return Err("먼저 미리보기를 만드세요.");
+        return Planner.Flows(_plan.Moves, dest);
     }
 
     object ExcludeMoves(List<string> paths)

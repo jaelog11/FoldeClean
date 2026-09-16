@@ -88,11 +88,14 @@
       <header class="ph"><h1 data-i18n="p4.title"></h1><p id="planSummary"></p></header>
       <div class="card"><div class="row between"><h3><span data-i18n="p4.flow"></span> <small class="muted" data-i18n="p4.flow.s"></small></h3>
         <label class="check"><input type="checkbox" id="animToggle" checked> <span data-i18n="p4.anim"></span></label></div>
-        <div class="flow-wrap"><svg id="flow"></svg></div></div>
+        <div class="crumbs" id="flowCrumbs"></div>
+        <div class="flow-wrap"><svg id="flow"></svg></div>
+        <p class="muted small" style="margin:6px 0 0" data-i18n="p4.flow.drill"></p></div>
       <div class="grid2">
-        <div class="card"><h3 data-i18n="p4.tree"></h3><div class="tree" id="tree"></div></div>
+        <div class="card"><h3 data-i18n="p4.tree"></h3><p class="muted small" style="margin:-6px 0 8px" data-i18n="p4.tree.hint"></p><div class="tree" id="tree"></div></div>
         <div class="card"><div class="row between"><h3><span data-i18n="p4.moves"></span> <span class="badge" id="moveCount"></span></h3><input class="input" id="moveFilter" data-i18n-ph="p4.move.ph" style="max-width:220px"></div>
           <p class="muted small" style="margin:0 0 8px" data-i18n="p4.help"></p>
+          <div id="destChip" hidden></div>
           <div class="vlist" id="moveList"><div class="vspacer" id="vspacer"></div><div class="vrows" id="vrows"></div></div>
           <div class="row"><button class="ghost small" id="btnExclude" data-i18n="p4.exclude"></button><span class="muted small" id="selInfo"></span></div></div>
       </div>

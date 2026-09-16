@@ -44,7 +44,7 @@ function go(step) {
   $$('.step').forEach(b => { const n = +b.dataset.step; b.classList.toggle('active', n === step); b.classList.toggle('done', n < step); if (n <= step) b.disabled = false; });
   $('.main').scrollTop = 0;
   if (step === 3) requestAnimationFrame(() => runDemo(state.strategy));
-  if (step === 4 && state.plan) requestAnimationFrame(() => renderFlow(state.plan.flows, state.plan.src_groups, state.plan.dest_tree));
+  if (step === 4 && state.flowData) requestAnimationFrame(() => renderFlow(state.flowData));
 }
 document.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g) go(+g.dataset.go); const s = e.target.closest('.step'); if (s && !s.disabled) go(+s.dataset.step); });
 
@@ -296,18 +296,59 @@ function showEmptyPlan(res) {
 function renderPlan(p) {
   const s = p.summary;
   $('#planSummary').innerHTML = t('p4.summary', { n: fmtNum(s.move_count), size: fmtSize(s.total_size), renamed: fmtNum(s.renamed), warn: fmtNum(s.warn_count) }) + (s.move_count === 0 ? ` · <span style="color:var(--warn)">${t('p4.empty')}</span>` : '');
-  renderFlow(p.flows, p.src_groups, p.dest_tree);
+  state.flowPath = ''; state.destFilter = '';
+  loadFlows('');
   $('#tree').innerHTML = p.dest_tree.length ? p.dest_tree.map(n => treeNode(n)).join('') : `<div class="muted">${t('p4.none')}</div>`;
-  $$('#tree .th').forEach(h => h.onclick = () => h.parentElement.classList.toggle('closed'));
+  bindTree();
   loadMoves('');
   $('#moveFilter').oninput = e => loadMoves(e.target.value);
 }
-function treeNode(n, depth = 0) {
-  const has = n.children.length; return `<div class="tnode ${depth > 1 ? 'closed' : ''}"><div class="th"><span class="caret">${has ? '▾' : ''}</span><span class="fname">📁 ${esc(n.name)}</span><span class="meta">${fmtNum(n.count)}${t('unit.files')} · ${fmtSize(n.size)}</span></div>${has ? `<div class="tc">${n.children.map(c => treeNode(c, depth + 1)).join('')}</div>` : ''}</div>`;
+function treeNode(n, depth = 0, parent = '') {
+  const path = parent ? parent + '/' + n.name : n.name;
+  const has = n.children.length;
+  return `<div class="tnode ${depth > 1 ? 'closed' : ''}"><div class="th" data-path="${esc(path)}"><span class="caret" data-toggle="1">${has ? '▾' : '·'}</span><span class="fname">📁 ${esc(n.name)}</span><span class="meta">${fmtNum(n.count)}${t('unit.files')} · ${fmtSize(n.size)}</span></div>${has ? `<div class="tc">${n.children.map(c => treeNode(c, depth + 1, path)).join('')}</div>` : ''}</div>`;
 }
-function renderFlow(flows, srcGroups, destTree) {
+// 폴더 구조: 화살표는 접기/펼치기, 폴더 이름은 오른쪽 목록을 그 폴더로 좁히기
+function bindTree() {
+  $$('#tree .th').forEach(h => h.onclick = ev => {
+    if (ev.target.dataset.toggle) { h.parentElement.classList.toggle('closed'); return; }
+    setDestFilter(h.dataset.path);
+  });
+}
+function setDestFilter(path) {
+  state.destFilter = path || '';
+  $$('#tree .th').forEach(h => h.classList.toggle('sel', h.dataset.path === state.destFilter));
+  const chip = $('#destChip');
+  if (state.destFilter) {
+    chip.innerHTML = `<span class="chipfilter">📁 ${esc(state.destFilter)} <button id="btnClearDest" title="${esc(t('p4.dest.clear'))}">✕</button></span>`;
+    chip.hidden = false;
+    $('#btnClearDest').onclick = () => setDestFilter('');
+  } else chip.hidden = true;
+  loadMoves($('#moveFilter').value || '');
+}
+
+// 흐름도: 한 단계씩 안으로 들어가며 볼 수 있다
+async function loadFlows(path) {
+  const d = await api.plan_flows(path || '');
+  if (d.error) return toast(d.error);
+  state.flowPath = d.path || '';
+  state.flowData = d;
+  renderCrumbs(d);
+  renderFlow(d);
+}
+function renderCrumbs(d) {
+  const parts = d.crumbs || [];
+  let acc = '';
+  const items = [`<button class="crumb" data-p="">${esc(t('p4.root'))}</button>`];
+  for (const p of parts) { acc = acc ? acc + '/' + p : p; items.push(`<button class="crumb" data-p="${esc(acc)}">${esc(p)}</button>`); }
+  $('#flowCrumbs').innerHTML = items.join('<span class="sep">›</span>')
+    + ` <span class="muted small">${fmtNum(d.move_count)}${t('unit.files')} · ${fmtSize(d.total_size)}</span>`;
+  $$('#flowCrumbs .crumb').forEach(b => b.onclick = () => loadFlows(b.dataset.p));
+}
+function renderFlow(d) {
+  const flows = d.flows || [], srcGroups = d.src_groups || [], destNodes = d.dest_nodes || [];
   const svg = $('#flow'); const W = Math.max(svg.clientWidth || 900, 700);
-  const L = srcGroups.slice(0, 14), R = destTree.slice(0, 14);
+  const L = srcGroups.slice(0, 14), R = destNodes.slice(0, 14);
   const rowH = 30, H = Math.max(L.length, R.length, 5) * rowH + 40; svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.style.height = H + 'px';
   const lx = 180, rx = W - 180, nw = 160;
   const totalL = L.reduce((a, g) => a + g.size, 0) || 1;
@@ -320,19 +361,33 @@ function renderFlow(flows, srcGroups, destTree) {
     const c = COLORS[rIdx[f.dst] % COLORS.length];
     out += `<path class="flow-path" d="${d}" stroke="${c}" stroke-width="${w}"><title>${esc(f.src)} → ${esc(f.dst)}\n${fmtNum(f.count)}${t('unit.files')} · ${fmtSize(f.size)}</title></path><path class="flow-dash" d="${d}" stroke-width="${Math.max(1.5, w * .45)}"/>`;
   });
-  const node = (x, y, name, meta, color) => `<g><rect class="flow-node" x="${x - nw / 2}" y="${y - 12}" width="${nw}" height="24" rx="7"${color ? ` stroke="${color}"` : ''}/><text class="flow-label" x="${x - nw / 2 + 8}" y="${y + 4}">${esc(name.length > 14 ? name.slice(0, 13) + '…' : name)}</text><text class="flow-sub" x="${x + nw / 2 - 8}" y="${y + 4}" text-anchor="end">${meta}</text></g>`;
+  const label = n => n === '' ? t('p4.here') : n;
+  const node = (x, y, name, meta, color, attrs = '') => {
+    const shown = label(name);
+    return `<g ${attrs}><rect class="flow-node" x="${x - nw / 2}" y="${y - 12}" width="${nw}" height="24" rx="7"${color ? ` stroke="${color}"` : ''}/><text class="flow-label" x="${x - nw / 2 + 8}" y="${y + 4}">${esc(shown.length > 14 ? shown.slice(0, 13) + '…' : shown)}</text><text class="flow-sub" x="${x + nw / 2 - 8}" y="${y + 4}" text-anchor="end">${meta}</text></g>`;
+  };
   L.forEach(g => out += node(lx, yL[g.name], g.name, fmtNum(g.count), null));
-  R.forEach((g, i) => out += node(rx, yR[g.name], g.name, fmtNum(g.count), COLORS[i % COLORS.length]));
+  R.forEach((g, i) => {
+    const meta = (g.has_children ? '› ' : '') + fmtNum(g.count);
+    out += node(rx, yR[g.name], g.name, meta, COLORS[i % COLORS.length],
+      `class="dnode" data-name="${esc(g.name)}" data-deep="${g.has_children ? 1 : 0}"`);
+  });
   out += `<text class="flow-sub" x="${lx - nw / 2}" y="12">${t('p4.from')}</text><text class="flow-sub" x="${rx - nw / 2}" y="12">${t('p4.to')}</text>`;
   svg.innerHTML = out;
+  // 오른쪽 폴더를 누르면: 하위가 있으면 한 단계 들어가고, 없으면 그 폴더의 파일만 목록에 보여준다
+  $$('#flow .dnode').forEach(g => g.onclick = () => {
+    const name = g.dataset.name;
+    const full = name === '' ? state.flowPath : (state.flowPath ? state.flowPath + '/' + name : name);
+    if (g.dataset.deep === '1') loadFlows(full); else setDestFilter(full);
+  });
 }
 $('#animToggle').onchange = e => $('#flow').classList.toggle('noanim', !e.target.checked);
 
 const ROW = 44; let mvTotal = 0, mvQuery = '', mvCache = new Map();
-async function loadMoves(q) { mvQuery = q; mvCache.clear(); const r = await api.plan_moves(0, 200, q); mvTotal = r.total; r.items.forEach((m, i) => mvCache.set(i, m)); $('#moveCount').textContent = fmtNum(mvTotal); $('#vspacer').style.height = mvTotal * ROW + 'px'; $('#moveList').scrollTop = 0; drawRows(); }
+async function loadMoves(q) { mvQuery = q; mvCache.clear(); const r = await api.plan_moves(0, 200, q, state.destFilter || ''); mvTotal = r.total; r.items.forEach((m, i) => mvCache.set(i, m)); $('#moveCount').textContent = fmtNum(mvTotal); $('#vspacer').style.height = mvTotal * ROW + 'px'; $('#moveList').scrollTop = 0; drawRows(); }
 async function drawRows() {
   const box = $('#moveList'); const start = Math.floor(box.scrollTop / ROW); const end = Math.min(mvTotal, start + Math.ceil(box.clientHeight / ROW) + 4);
-  if ([...Array(Math.max(0, end - start)).keys()].some(i => !mvCache.has(start + i))) { const r = await api.plan_moves(Math.max(0, start - 50), 300, mvQuery); r.items.forEach((m, i) => mvCache.set(Math.max(0, start - 50) + i, m)); }
+  if ([...Array(Math.max(0, end - start)).keys()].some(i => !mvCache.has(start + i))) { const r = await api.plan_moves(Math.max(0, start - 50), 300, mvQuery, state.destFilter || ''); r.items.forEach((m, i) => mvCache.set(Math.max(0, start - 50) + i, m)); }
   let html = '';
   for (let i = start; i < end; i++) {
     const m = mvCache.get(i); if (!m) continue;
@@ -504,4 +559,4 @@ $('#btnRulesSave').onclick = async () => {
 // ---------------------------------------------------------------- 시작
 function start() { initLang(); initDepth(); initVersion(); initFolders(); initStrategies(); initEdition(); initWelcome(); }
 if (wv2 || (window.pywebview && window.pywebview.api)) start(); else { window.addEventListener('pywebviewready', start, { once: true }); setTimeout(() => { if (!window.pywebview) start(); }, 300); }
-window.addEventListener('resize', () => { if (state.plan && state.step === 4) renderFlow(state.plan.flows, state.plan.src_groups, state.plan.dest_tree); if (state.step === 3) runDemo(state.strategy); });
+window.addEventListener('resize', () => { if (state.flowData && state.step === 4) renderFlow(state.flowData); if (state.step === 3) runDemo(state.strategy); });

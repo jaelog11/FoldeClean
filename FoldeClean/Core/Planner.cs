@@ -116,6 +116,58 @@ public static class Planner
         return plan;
     }
 
+    /// <summary>
+    /// 흐름도를 한 단계 안으로 들어가서 본다. dest 가 빈 문자열이면 최상위.
+    /// 오른쪽 칸은 dest 바로 아래 한 단계만 보여주고, 더 들어갈 수 있는지(has_children)도 알려 준다.
+    /// dest 폴더에 바로 들어가는 파일은 이름이 "" 인 항목으로 모은다.
+    /// </summary>
+    public static Dictionary<string, object?> Flows(List<MoveRec> moves, string dest)
+    {
+        var sep = Path.DirectorySeparatorChar;
+        dest = (dest ?? "").Trim().Replace('/', sep).Trim(sep);   // 화면은 / 를 쓸 수 있다
+        var prefix = dest.Length == 0 ? "" : dest + sep;
+        var scoped = dest.Length == 0 ? moves
+            : moves.Where(m => m.DstRel.Equals(dest, StringComparison.OrdinalIgnoreCase)
+                            || m.DstRel.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        // dest 아래로 남은 경로를 조각으로 나눈다
+        string[] Rest(MoveRec m)
+        {
+            var rest = dest.Length == 0 ? m.DstRel
+                     : (m.DstRel.Length > prefix.Length ? m.DstRel[prefix.Length..] : "");
+            return rest.Length == 0 ? Array.Empty<string>() : rest.Split(sep);
+        }
+
+        var flows = new Dictionary<(string, string), Agg>();
+        var srcDirs = new Dictionary<string, Agg>();
+        var nodes = new Dictionary<string, Agg>();
+        var deeper = new HashSet<string>();     // 더 들어갈 수 있는 노드
+
+        foreach (var m in scoped)
+        {
+            var parts = Rest(m);
+            var seg = parts.Length == 0 ? "" : parts[0];
+            if (parts.Length > 1) deeper.Add(seg);
+            Bump(flows, (m.SrcGroup, seg), m.Size);
+            Bump(srcDirs, m.SrcGroup, m.Size);
+            Bump(nodes, seg, m.Size);
+        }
+
+        return new()
+        {
+            ["path"] = dest,
+            ["crumbs"] = dest.Length == 0 ? new List<string>() : dest.Split(sep).ToList(),
+            ["move_count"] = scoped.Count,
+            ["total_size"] = scoped.Sum(m => m.Size),
+            ["flows"] = flows.OrderByDescending(kv => kv.Value.Size)
+                .Select(kv => new Dictionary<string, object?> { ["src"] = kv.Key.Item1, ["dst"] = kv.Key.Item2, ["count"] = kv.Value.Count, ["size"] = kv.Value.Size }).ToList(),
+            ["src_groups"] = srcDirs.OrderByDescending(kv => kv.Value.Size)
+                .Select(kv => new Dictionary<string, object?> { ["name"] = kv.Key, ["count"] = kv.Value.Count, ["size"] = kv.Value.Size }).ToList(),
+            ["dest_nodes"] = nodes.OrderByDescending(kv => kv.Value.Size)
+                .Select(kv => new Dictionary<string, object?> { ["name"] = kv.Key, ["count"] = kv.Value.Count, ["size"] = kv.Value.Size, ["has_children"] = deeper.Contains(kv.Key) }).ToList(),
+        };
+    }
+
     static void Bump<K>(Dictionary<K, Agg> d, K key, long size) where K : notnull
     {
         if (!d.TryGetValue(key, out var a)) d[key] = a = new Agg();

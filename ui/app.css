@@ -120,6 +120,14 @@ button.small{padding:6px 10px;font-size:12px}button:disabled{opacity:.5;cursor:d
 @keyframes dash{to{stroke-dashoffset:-18}}
 .noanim .flow-dash{display:none}
 .tree{max-height:360px;overflow:auto;font-size:13px}.tnode{padding:3px 0 3px 0}.tnode .th{display:flex;gap:8px;align-items:center;cursor:pointer;border-radius:6px;padding:3px 6px}.tnode .th:hover{background:var(--card2)}
+.crumbs{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;font-size:12px}
+.crumbs .crumb{background:var(--card2);border:1px solid var(--line);border-radius:7px;padding:4px 10px;cursor:pointer;color:var(--text);font-size:12px}
+.crumbs .crumb:hover{border-color:var(--accent)}.crumbs .crumb:last-of-type{border-color:var(--accent);color:var(--accent)}
+.crumbs .sep{color:var(--muted)}
+#flow .dnode{cursor:pointer}#flow .dnode:hover .flow-node{fill:var(--card)}#flow .dnode:hover .flow-label{fill:var(--accent)}
+.chipfilter{display:inline-flex;align-items:center;gap:8px;background:color-mix(in srgb,var(--accent) 14%,var(--card2));border:1px solid var(--accent);border-radius:999px;padding:4px 8px 4px 12px;font-size:12px;margin-bottom:8px}
+.chipfilter button{background:none;border:0;color:var(--muted);cursor:pointer;font-size:13px;padding:0 4px}.chipfilter button:hover{color:var(--bad)}
+.tnode .th.sel{background:color-mix(in srgb,var(--accent) 16%,transparent);outline:1px solid var(--accent)}
 .tnode .th .caret{width:12px;color:var(--muted);font-size:10px}.tnode .th .fname{font-weight:600}.tnode .th .meta{color:var(--muted);font-size:11px;margin-left:auto}.tnode .tc{margin-left:18px;border-left:1px solid var(--line);padding-left:6px}.tnode.closed>.tc{display:none}
 .vlist{position:relative;height:320px;overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--bg2)}.vrows{position:absolute;left:0;right:0;top:0}
 .vrow{display:grid;grid-template-columns:22px 1.2fr 16px 1fr 64px 26px 26px;gap:8px;align-items:center;height:44px;padding:0 10px;font-size:12px;border-bottom:1px solid var(--line)}

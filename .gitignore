@@ -31,5 +31,4 @@ FoldeClean-cert.cer
 
 # Claude 작업 설정
 .claude/
-dist_v2/
-dist_v3/
+dist_v4/
