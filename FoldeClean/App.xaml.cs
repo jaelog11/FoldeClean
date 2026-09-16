@@ -50,6 +50,17 @@ public partial class App : Application
                 plans[id] = Planner.Build(scan.Files, root, Strategies.Make(id, new()), false, new(), 0).Summary;
             log["plans"] = plans;
 
+            // 중복 예상(크기만)과 실제(내용 읽기) 비교 — 예상은 항상 실제보다 크거나 같아야 한다
+            var hint = Dupes.SizeHint(scan.Files);
+            var exact = Dupes.ExactCheck(scan.Files, 1024);
+            log["dupe"] = new Dictionary<string, object?>
+            {
+                ["hint_candidates"] = hint["candidates"], ["hint_max_reclaim"] = hint["max_reclaim"],
+                ["exact_duplicates"] = exact["duplicates"], ["exact_reclaim"] = exact["reclaim"],
+                ["upper_bound_ok"] = Convert.ToInt64(hint["candidates"]) >= Convert.ToInt64(exact["duplicates"])
+                                  && Convert.ToInt64(hint["max_reclaim"]) >= Convert.ToInt64(exact["reclaim"]),
+            };
+
             // 규칙(Pro) 검증: 폴더 지정 + 치환자, 건너뛰기, 이름 앞에 붙이기, 조건 두 개
             var baseline = Planner.Build(scan.Files, root, Strategies.Make("type", new()), false, new(), 0);
             var testRules = new RuleSet

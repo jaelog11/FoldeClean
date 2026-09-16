@@ -49,6 +49,34 @@ public static class Dupes
         return buckets.Values.Where(g => g.Count > 1).ToList();
     }
 
+    /// <summary>
+    /// 파일을 읽지 않고 크기만으로 내는 예상. 크기가 같은 파일이 하나도 없으면 중복도 있을 수 없다.
+    /// 검사 직후 바로 계산할 수 있어 "중복 없음"을 즉시 알려 줄 때 쓴다.
+    /// </summary>
+    public static Dictionary<string, object?> SizeHint(List<FileRec> files, long minSize = 1024)
+    {
+        var groups = files.Where(f => f.Risk != "block" && f.Size >= minSize)
+                          .GroupBy(f => f.Size).Where(g => g.Count() > 1).ToList();
+        return new()
+        {
+            ["candidates"] = groups.Sum(g => g.Count()),          // 크기가 겹치는 파일 수
+            ["groups"] = groups.Count,
+            ["max_reclaim"] = groups.Sum(g => (long)(g.Count() - 1) * g.Key),   // 전부 중복이라면 줄어들 용량
+        };
+    }
+
+    /// <summary>실제로 내용을 읽어 확인한다. 묶음 수, 지울 수 있는 파일 수, 확보 용량.</summary>
+    public static Dictionary<string, object?> ExactCheck(List<FileRec> files, long minSize, Action<long, long>? progress = null)
+    {
+        var dupes = FindDuplicates(files.Where(f => f.Risk != "block" && f.Size >= minSize).ToList(), progress);
+        return new()
+        {
+            ["groups"] = dupes.Count,
+            ["duplicates"] = dupes.Sum(g => g.Count - 1),
+            ["reclaim"] = dupes.Sum(g => (long)(g.Count - 1) * g[0].Size),
+        };
+    }
+
     /// <summary>progress(읽은 바이트, 최대 예상 바이트). 크기가 같은 파일만 읽으므로 대부분의 파일은 읽지 않는다.</summary>
     public static List<List<FileRec>> FindDuplicates(List<FileRec> files, Action<long, long>? progress = null)
     {

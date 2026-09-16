@@ -113,6 +113,7 @@ function renderScan(res) {
   const s = res.summary, r = res.risk.stats;
   $('#scanRoot').textContent = s.root;
   renderScanNote(res);
+  if (state.strategies.length) renderStrategyCards();   // 중복 예상 배지를 카드에 반영
   $('#tiles').innerHTML = [
     [t('p2.files'), fmtNum(s.file_count) + t('unit.files'), ''], [t('p2.size'), fmtSize(s.total_size), ''],
     [t('p2.safe'), fmtNum(r.safe) + t('unit.files'), 'ok'], [t('p2.wb'), `${fmtNum(r.warn)} / ${fmtNum(r.block)}`, r.block ? 'bad' : 'warn'],
@@ -186,9 +187,35 @@ const DEMO = () => ({
   dedupe: { bins: [t('demo.orig'), t('cat.other') === 'cat.other' ? '_dup' : t('strat.dedupe.ex').split('/')[0]], files: [['photo.jpg', 0], ['photo (1).jpg', 1], ['report.pdf', 0], ['report copy.pdf', 1], ['photo (2).jpg', 1]] },
 });
 async function initStrategies() { state.strategies = await api.strategies(); renderStrategyCards(); selectStrategy(state.strategy); }
+// 중복 예상: 검사할 때 크기만으로 미리 계산해 둔 값. 파일을 읽지 않아 즉시 알 수 있다.
+function dupeBadge(id) {
+  if (id !== 'dedupe') return '';
+  const h = state.scan && state.scan.dupe_hint;
+  if (!h) return '';
+  return h.candidates ? `<span class="dbadge maybe">${esc(t('dup.maybe', { n: fmtNum(h.candidates) }))}</span>`
+                      : `<span class="dbadge none">${esc(t('dup.none'))}</span>`;
+}
 function renderStrategyCards() {
-  $('#stratGrid').innerHTML = state.strategies.map(s => `<div class="scard ${s.id === state.strategy ? 'sel' : ''}" data-id="${s.id}"><span class="tag">${esc(t(`strat.${s.id}.tag`))}</span><b>${esc(t(`strat.${s.id}.name`))}</b><p>${esc(t(`strat.${s.id}.desc`))}</p></div>`).join('');
+  $('#stratGrid').innerHTML = state.strategies.map(s => `<div class="scard ${s.id === state.strategy ? 'sel' : ''}" data-id="${s.id}"><span class="tag">${esc(t(`strat.${s.id}.tag`))}</span><b>${esc(t(`strat.${s.id}.name`))}</b><p>${esc(t(`strat.${s.id}.desc`))}</p>${dupeBadge(s.id)}</div>`).join('');
   $$('.scard').forEach(c => c.onclick = () => selectStrategy(c.dataset.id));
+}
+function renderDupeBlock() {
+  const h = state.scan && state.scan.dupe_hint;
+  if (!h) return `<div class="dupebox"><span class="muted small">${esc(t('dup.needscan'))}</span></div>`;
+  if (!h.candidates) return `<div class="dupebox none">${esc(t('dup.hint.none'))}</div>`;
+  return `<div class="dupebox"><div>${t('dup.hint.some', { n: fmtNum(h.candidates), size: fmtSize(h.max_reclaim) })}</div>
+    <div class="row"><button class="ghost small" id="btnDupeCheck">${esc(t('dup.check'))}</button><span class="small" id="dupeResult"></span></div></div>`;
+}
+async function runDupeCheck() {
+  busy(t('dup.checking'));
+  const poll = watchProgress(t('dup.checking'));
+  const r = await api.dedupe_check(1024);
+  clearInterval(poll); busy(null);
+  const el = $('#dupeResult'); if (!el) return;
+  if (r.error) { el.textContent = r.error; return; }
+  el.innerHTML = r.duplicates
+    ? `<b class="ok">${esc(t('dup.result', { groups: fmtNum(r.groups), n: fmtNum(r.duplicates), size: fmtSize(r.reclaim) }))}</b>`
+    : esc(t('dup.result0'));
 }
 function selectStrategy(id) {
   const prev = collectOpts();
@@ -200,8 +227,9 @@ function selectStrategy(id) {
     if (ty === 'select') return `<label class="opt"><span>${t(label)}<small>${h}</small></span><select class="input" data-k="${k}" style="width:130px">${def.map(([v, l]) => `<option value="${v}" ${prev[k] === v ? 'selected' : ''}>${t(l)}</option>`).join('')}</select></label>`;
     return `<label class="opt"><span>${t(label)}<small>${h}</small></span><input class="input" type="number" data-k="${k}" value="${prev[k] ?? def}"></label>`;
   }).join('');
-  $('#stratDetail').innerHTML = `<h3>${esc(t(`strat.${id}.name`))} <span class="badge">${esc(t(`strat.${id}.tag`))}</span></h3><p class="muted" style="margin:0">${esc(t(`strat.${id}.desc`))}</p><div class="demo" id="demo"></div><div class="kv"><b>${t('p3.best')}</b><span>${esc(t(`strat.${id}.best`))}</span><b>${t('p3.example')}</b><span>${esc(t(`strat.${id}.ex`))}</span></div><div class="opts">${opts}<label class="opt"><span>${t('p3.warn')}<small>${t('p3.warn.s')}</small></span><input type="checkbox" id="optWarn"></label></div>`;
+  $('#stratDetail').innerHTML = `<h3>${esc(t(`strat.${id}.name`))} <span class="badge">${esc(t(`strat.${id}.tag`))}</span></h3><p class="muted" style="margin:0">${esc(t(`strat.${id}.desc`))}</p>${id === 'dedupe' ? renderDupeBlock() : ''}<div class="demo" id="demo"></div><div class="kv"><b>${t('p3.best')}</b><span>${esc(t(`strat.${id}.best`))}</span><b>${t('p3.example')}</b><span>${esc(t(`strat.${id}.ex`))}</span></div><div class="opts">${opts}<label class="opt"><span>${t('p3.warn')}<small>${t('p3.warn.s')}</small></span><input type="checkbox" id="optWarn"></label></div>`;
   $('#optWarn').checked = state.includeWarn; $('#optWarn').onchange = e => state.includeWarn = e.target.checked;
+  const dc = $('#btnDupeCheck'); if (dc) dc.onclick = runDupeCheck;
   runDemo(id);
 }
 function collectOpts() { const o = {}; $$('#stratDetail [data-k]').forEach(el => o[el.dataset.k] = el.type === 'checkbox' ? el.checked : (el.type === 'number' ? +el.value : el.value)); return o; }

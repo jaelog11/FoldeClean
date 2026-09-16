@@ -96,6 +96,12 @@ button.small{padding:6px 10px;font-size:12px}button:disabled{opacity:.5;cursor:d
 .scard{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;cursor:pointer;transition:.2s;position:relative}
 .scard:hover{border-color:var(--accent);transform:translateY(-2px)}.scard.sel{border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,140,255,.2)}
 .scard .tag{position:absolute;top:12px;right:12px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--card2);color:var(--muted)}
+.dbadge{display:inline-block;margin-top:8px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px}
+.dbadge.none{background:color-mix(in srgb,var(--muted) 18%,transparent);color:var(--muted)}
+.dbadge.maybe{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+.dupebox{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:12px;font-size:13px;display:flex;flex-direction:column;gap:8px}
+.dupebox.none{border-color:color-mix(in srgb,var(--muted) 40%,var(--line));color:var(--muted)}
+.dupebox b.ok{color:var(--ok)}
 .scard b{display:block;font-size:14px;margin-bottom:4px}.scard p{margin:0;color:var(--muted);font-size:12px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .strat-detail{margin:0;position:sticky;top:0;align-self:start}
 .demo{position:relative;height:200px;border-radius:12px;background:var(--bg2);border:1px dashed var(--line);margin:12px 0;overflow:hidden}

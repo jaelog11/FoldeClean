@@ -21,6 +21,7 @@ from core.strategies import STRATEGY_META, category_breakdown, make_strategy  # 
 from core import i18n  # noqa: E402
 from core import edition as ed  # noqa: E402
 from core import rules as rl  # noqa: E402
+from core import dupes as dupes_mod  # noqa: E402
 
 UI_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui")
 VERSION = "0.2"   # C# 판(FoldeClean.csproj의 Version)과 맞춘다
@@ -88,7 +89,23 @@ class Api:
             "summary": res.summary(), "risk": info, "categories": category_breakdown(res.files),
             "flagged": flagged[:2000], "flagged_total": len(flagged),
             "depth": depth, "skipped_dirs": len(res.dirs) if depth == 0 else 0,
+            "dupe_hint": dupes_mod.size_hint(res.files),
         }
+
+    def dedupe_check(self, min_size: int = 1024):
+        """중복을 실제로 확인. 크기가 겹치는 파일이 없으면 읽지 않고 바로 0."""
+        if self._scan_result is None:
+            return {"error": "먼저 폴더를 검사하세요."}
+        hint = dupes_mod.size_hint(self._scan_result.files, int(min_size))
+        if hint["candidates"] == 0:
+            return {"groups": 0, "duplicates": 0, "reclaim": 0, "instant": True}
+        self._set_progress("hash", 0, 0)
+        try:
+            r = dupes_mod.exact_check(self._scan_result.files, int(min_size))
+            r["instant"] = False
+            return r
+        finally:
+            self._set_progress("idle")
 
     def strategies(self):
         return [{"id": m["id"]} for m in STRATEGY_META]   # 문구는 ui/i18n.js

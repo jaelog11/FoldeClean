@@ -2,6 +2,12 @@
 'use strict';
 const I18N = {
 ko: {
+  'dup.none': '중복 없음', 'dup.maybe': '중복 후보 {n}개', 'dup.needscan': '폴더를 검사하면 중복이 있는지 미리 알려 드립니다.',
+  'dup.hint.none': '이 폴더에는 크기가 같은 파일이 하나도 없습니다. 내용이 같은 파일도 있을 수 없으니 다른 방식을 고르세요.',
+  'dup.hint.some': '크기가 같은 파일이 <b>{n}개</b> 있습니다. 내용까지 같은지는 읽어 봐야 알 수 있고, 모두 같다면 최대 <b>{size}</b>를 줄일 수 있습니다.',
+  'dup.check': '정확히 확인', 'dup.checking': '중복 확인 중…',
+  'dup.result': '{groups}묶음 · 지울 수 있는 파일 {n}개 · {size} 확보',
+  'dup.result0': '크기는 같지만 내용이 같은 파일은 없습니다.',
   'p1.depth': '검사 범위', 'p1.depth.s': '· 하위 폴더 안까지 볼지 정합니다',
   'p1.depth0': '이 폴더의 파일만', 'p1.depth2': '하위 2단계까지', 'p1.depthAll': '하위 폴더 전부',
   'p2.note.top': '이 폴더에 바로 있는 파일만 검사했습니다. 하위 폴더 <b>{n}개</b>는 열어 보지 않았습니다. 그 안의 파일은 이미 정리되어 있을 수 있어 기본으로 건드리지 않습니다.',
@@ -86,6 +92,12 @@ ko: {
   'demo.keep': '(그대로)', 'demo.orig': '(원본 유지)',
 },
 en: {
+  'dup.none': 'No duplicates', 'dup.maybe': '{n} possible duplicates', 'dup.needscan': 'Scan a folder and we will tell you in advance whether duplicates exist.',
+  'dup.hint.none': 'No two files in this folder share the same size, so there can be no duplicates. Pick another method.',
+  'dup.hint.some': '<b>{n} files</b> share a size with another file. Whether their contents match needs a read; if they all do, you could free up to <b>{size}</b>.',
+  'dup.check': 'Check exactly', 'dup.checking': 'Checking duplicates…',
+  'dup.result': '{groups} groups · {n} files removable · {size} freed',
+  'dup.result0': 'Same sizes, but no file has identical content.',
   'p1.depth': 'Scan scope', 'p1.depth.s': '· how deep to look inside subfolders',
   'p1.depth0': 'This folder only', 'p1.depth2': 'Two levels down', 'p1.depthAll': 'All subfolders',
   'p2.note.top': 'Only files sitting directly in this folder were scanned. <b>{n}</b> subfolders were left untouched, since files in them may already be organized.',
@@ -170,6 +182,12 @@ en: {
   'demo.keep': '(stays)', 'demo.orig': '(original kept)',
 },
 zh: {
+  'dup.none': '无重复', 'dup.maybe': '疑似重复 {n} 个', 'dup.needscan': '检查文件夹后会提前告诉您是否存在重复。',
+  'dup.hint.none': '此文件夹中没有任何两个文件大小相同，因此不可能有重复文件。请选择其他方式。',
+  'dup.hint.some': '有 <b>{n} 个</b>文件与其他文件大小相同。内容是否一致需要读取后才知道，若全部相同最多可释放 <b>{size}</b>。',
+  'dup.check': '精确检查', 'dup.checking': '正在检查重复…',
+  'dup.result': '{groups} 组 · 可删除 {n} 个 · 释放 {size}',
+  'dup.result0': '大小相同，但没有内容一致的文件。',
   'p1.depth': '检查范围', 'p1.depth.s': '· 决定是否深入子文件夹',
   'p1.depth0': '仅此文件夹的文件', 'p1.depth2': '向下两层', 'p1.depthAll': '全部子文件夹',
   'p2.note.top': '只检查了直接放在此文件夹中的文件。未打开 <b>{n}</b> 个子文件夹，因为其中的文件可能已经整理好了。',
@@ -254,6 +272,12 @@ zh: {
   'demo.keep': '（保持）', 'demo.orig': '（保留原件）',
 },
 ja: {
+  'dup.none': '重複なし', 'dup.maybe': '重複候補 {n} 件', 'dup.needscan': 'フォルダを検査すると、重複があるか先にお知らせします。',
+  'dup.hint.none': 'このフォルダには同じサイズのファイルが 1 つもないため、重複も存在しません。別の方法を選んでください。',
+  'dup.hint.some': '同じサイズのファイルが <b>{n} 件</b>あります。中身まで同じかは読まないと分からず、すべて同じなら最大 <b>{size}</b> を減らせます。',
+  'dup.check': '正確に確認', 'dup.checking': '重複を確認中…',
+  'dup.result': '{groups} グループ · 削除できるファイル {n} 件 · {size} 確保',
+  'dup.result0': 'サイズは同じですが、中身が同じファイルはありません。',
   'p1.depth': '検査範囲', 'p1.depth.s': '· サブフォルダの中まで見るかを決めます',
   'p1.depth0': 'このフォルダのファイルのみ', 'p1.depth2': '2階層下まで', 'p1.depthAll': 'サブフォルダすべて',
   'p2.note.top': 'このフォルダに直接あるファイルだけを検査しました。サブフォルダ <b>{n}</b> 個は開いていません。中のファイルはすでに整理済みの可能性があるためです。',

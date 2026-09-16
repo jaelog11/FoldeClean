@@ -32,6 +32,7 @@ public sealed class Api
         "rules_get" => RulesGet(),
         "rules_save" => RulesSave(Arg(args, 0, new List<Rule>())),
         "rules_test" => RulesTest(Arg(args, 0, new Rule())),
+        "dedupe_check" => DedupeCheck(Arg(args, 0, 1024L)),
         "get_progress" => new Dictionary<string, object?> { ["phase"] = _phase, ["count"] = Interlocked.Read(ref _count), ["total"] = Interlocked.Read(ref _total), ["exec"] = _executor.Snapshot() },
         "pick_folder" => PickFolder?.Invoke(),
         "default_folders" => DefaultFolders(),
@@ -71,6 +72,24 @@ public sealed class Api
     };
 
     static object SetLang(string lang) { I18n.Set(lang); return I18n.Lang; }
+
+    /// <summary>중복을 실제로 확인한다. 크기가 겹치는 파일이 없으면 읽지 않고 바로 0을 돌려준다.</summary>
+    object DedupeCheck(long minSize)
+    {
+        if (_scan == null) return Err("먼저 폴더를 검사하세요.");
+        var hint = Dupes.SizeHint(_scan.Files, minSize);
+        if ((int)(hint["candidates"] ?? 0) == 0)
+            return new Dictionary<string, object?> { ["groups"] = 0, ["duplicates"] = 0, ["reclaim"] = 0L, ["instant"] = true };
+        _phase = "hash"; _count = 0; _total = 0;
+        try
+        {
+            var r = Dupes.ExactCheck(_scan.Files, minSize,
+                (d, t) => { Interlocked.Exchange(ref _count, d); Interlocked.Exchange(ref _total, t); });
+            r["instant"] = false;
+            return r;
+        }
+        finally { _phase = "idle"; }
+    }
 
     // ---------------------------------------------------------------- 판 구분과 규칙 (Pro)
     static object StartTrial()
@@ -180,6 +199,7 @@ public sealed class Api
             ["summary"] = res.Summary(), ["risk"] = info, ["categories"] = Categories.Breakdown(res.Files),
             ["flagged"] = flagged.Take(2000).Select(f => f.ToDict()).ToList(), ["flagged_total"] = flagged.Count,
             ["depth"] = depth, ["skipped_dirs"] = skippedDirs,
+            ["dupe_hint"] = Dupes.SizeHint(res.Files),   // 파일을 읽지 않는 예상. "중복 없음"을 즉시 알려 준다
         };
     }
 
