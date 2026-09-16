@@ -99,6 +99,8 @@ button.small{padding:6px 10px;font-size:12px}button:disabled{opacity:.5;cursor:d
 .dbadge{display:inline-block;margin-top:8px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px}
 .dbadge.none{background:color-mix(in srgb,var(--muted) 18%,transparent);color:var(--muted)}
 .dbadge.maybe{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+.dbadge.checking{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 .dupebox{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:12px;font-size:13px;display:flex;flex-direction:column;gap:8px}
 .dupebox.none{border-color:color-mix(in srgb,var(--muted) 40%,var(--line));color:var(--muted)}
 .dupebox b.ok{color:var(--ok)}

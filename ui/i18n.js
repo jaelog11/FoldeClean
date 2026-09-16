@@ -2,6 +2,7 @@
 'use strict';
 const I18N = {
 ko: {
+  'dup.checkingShort': '확인 중…',
   'dup.found': '중복 {n}개', 'dup.confirmed': '확인 완료 · {groups}묶음 · 지울 수 있는 파일 {n}개 · {size} 확보',
   'dup.confirmed0': '확인해 보니 내용이 같은 파일은 없습니다. 크기만 같았을 뿐입니다. 다른 방식을 고르세요.',
   'plan.empty.title': '옮길 파일이 없습니다.',
@@ -10,7 +11,7 @@ ko: {
   'plan.empty.same': '파일 {n}개가 이미 이 방식이 정한 자리에 있습니다. 이미 정리된 폴더입니다.',
   'plan.empty.rules': '내 규칙이 파일 {n}개를 건너뛰도록 되어 있습니다. 규칙을 확인해 보세요.',
   'plan.empty.general': '옮길 파일이 없습니다. 검사 범위를 넓히거나 다른 방식·옵션을 골라 보세요.',
-  'dup.none': '중복 없음', 'dup.maybe': '중복 후보 {n}개', 'dup.needscan': '폴더를 검사하면 중복이 있는지 미리 알려 드립니다.',
+  'dup.none': '중복 없음', 'dup.maybe': '중복 가능 {n}개', 'dup.needscan': '폴더를 검사하면 중복이 있는지 미리 알려 드립니다.',
   'dup.hint.none': '이 폴더에는 크기가 같은 파일이 하나도 없습니다. 내용이 같은 파일도 있을 수 없으니 다른 방식을 고르세요.',
   'dup.hint.some': '크기가 같은 파일이 <b>{n}개</b> 있습니다. 내용까지 같은지는 읽어 봐야 알 수 있고, 모두 같다면 최대 <b>{size}</b>를 줄일 수 있습니다.',
   'dup.check': '정확히 확인', 'dup.checking': '중복 확인 중…',
@@ -100,6 +101,7 @@ ko: {
   'demo.keep': '(그대로)', 'demo.orig': '(원본 유지)',
 },
 en: {
+  'dup.checkingShort': 'checking…',
   'dup.found': '{n} duplicates', 'dup.confirmed': 'Confirmed · {groups} groups · {n} files removable · {size} freed',
   'dup.confirmed0': 'Checked: no file has identical content. They only shared a size. Pick another method.',
   'plan.empty.title': 'Nothing to move.',
@@ -108,7 +110,7 @@ en: {
   'plan.empty.same': '{n} files are already where this method would put them. The folder is already organized.',
   'plan.empty.rules': 'Your rules skip {n} files. Check the rules.',
   'plan.empty.general': 'Nothing to move. Widen the scan scope, or pick another method or options.',
-  'dup.none': 'No duplicates', 'dup.maybe': '{n} possible duplicates', 'dup.needscan': 'Scan a folder and we will tell you in advance whether duplicates exist.',
+  'dup.none': 'No duplicates', 'dup.maybe': '{n} maybe duplicate', 'dup.needscan': 'Scan a folder and we will tell you in advance whether duplicates exist.',
   'dup.hint.none': 'No two files in this folder share the same size, so there can be no duplicates. Pick another method.',
   'dup.hint.some': '<b>{n} files</b> share a size with another file. Whether their contents match needs a read; if they all do, you could free up to <b>{size}</b>.',
   'dup.check': 'Check exactly', 'dup.checking': 'Checking duplicates…',
@@ -198,6 +200,7 @@ en: {
   'demo.keep': '(stays)', 'demo.orig': '(original kept)',
 },
 zh: {
+  'dup.checkingShort': '检查中…',
   'dup.found': '重复 {n} 个', 'dup.confirmed': '确认完成 · {groups} 组 · 可删除 {n} 个 · 释放 {size}',
   'dup.confirmed0': '检查后发现没有内容相同的文件，只是大小相同而已。请选择其他方式。',
   'plan.empty.title': '没有可移动的文件。',
@@ -296,6 +299,7 @@ zh: {
   'demo.keep': '（保持）', 'demo.orig': '（保留原件）',
 },
 ja: {
+  'dup.checkingShort': '確認中…',
   'dup.found': '重複 {n} 件', 'dup.confirmed': '確認完了 · {groups} グループ · 削除できるファイル {n} 件 · {size} 確保',
   'dup.confirmed0': '確認したところ中身が同じファイルはありません。サイズが同じだっただけです。別の方法を選んでください。',
   'plan.empty.title': '移動するファイルがありません。',

@@ -113,8 +113,9 @@ function renderScan(res) {
   const s = res.summary, r = res.risk.stats;
   $('#scanRoot').textContent = s.root;
   renderScanNote(res);
-  state.dupeExact = null;                               // 새 검사이므로 중복 확정값은 버린다
+  state.dupeExact = null; state.dupeChecking = false;   // 새 검사이므로 중복 확정값은 버린다
   if (state.strategies.length) renderStrategyCards();   // 중복 예상 배지를 카드에 반영
+  maybeAutoDupeCheck();                                 // 양이 적으면 바로 확정해 배지를 정확하게
   $('#tiles').innerHTML = [
     [t('p2.files'), fmtNum(s.file_count) + t('unit.files'), ''], [t('p2.size'), fmtSize(s.total_size), ''],
     [t('p2.safe'), fmtNum(r.safe) + t('unit.files'), 'ok'], [t('p2.wb'), `${fmtNum(r.warn)} / ${fmtNum(r.block)}`, r.block ? 'bad' : 'warn'],
@@ -199,8 +200,18 @@ function dupeBadge(id) {
   if (ex) return ex.duplicates
     ? `<span class="dbadge maybe">${esc(t('dup.found', { n: fmtNum(ex.duplicates) }))}</span>`
     : `<span class="dbadge none">${esc(t('dup.none'))}</span>`;
-  return h.candidates ? `<span class="dbadge maybe">${esc(t('dup.maybe', { n: fmtNum(h.candidates) }))}</span>`
-                      : `<span class="dbadge none">${esc(t('dup.none'))}</span>`;
+  if (!h.candidates) return `<span class="dbadge none">${esc(t('dup.none'))}</span>`;
+  if (state.dupeChecking) return `<span class="dbadge checking">${esc(t('dup.checkingShort'))}</span>`;
+  return `<span class="dbadge maybe">${esc(t('dup.maybe', { n: fmtNum(h.candidates) }))}</span>`;
+}
+/// 읽을 양이 적으면 검사 직후 바로 확정해 둔다. 카드를 누르기 전에 정확한 값이 보이도록.
+function maybeAutoDupeCheck() {
+  const h = state.scan && state.scan.dupe_hint;
+  if (!h || !h.candidates || state.dupeExact || state.dupeChecking) return;
+  if ((h.candidate_bytes || 0) > DUPE_AUTO_BYTES) return;
+  state.dupeChecking = true;
+  renderStrategyCards();
+  runDupeCheck(true);
 }
 function renderStrategyCards() {
   $('#stratGrid').innerHTML = state.strategies.map(s => `<div class="scard ${s.id === state.strategy ? 'sel' : ''}" data-id="${s.id}"><span class="tag">${esc(t(`strat.${s.id}.tag`))}</span><b>${esc(t(`strat.${s.id}.name`))}</b><p>${esc(t(`strat.${s.id}.desc`))}</p>${dupeBadge(s.id)}</div>`).join('');
@@ -214,10 +225,9 @@ function renderDupeBlock() {
   if (ex) return ex.duplicates
     ? `<div class="dupebox"><b class="ok">${esc(t('dup.confirmed', { groups: fmtNum(ex.groups), n: fmtNum(ex.duplicates), size: fmtSize(ex.reclaim) }))}</b></div>`
     : `<div class="dupebox none">${esc(t('dup.confirmed0'))}</div>`;
-  const auto = (h.candidate_bytes || 0) <= DUPE_AUTO_BYTES;
+  if (state.dupeChecking) return `<div class="dupebox"><span class="muted small">${esc(t('dup.checking'))}</span></div>`;
   return `<div class="dupebox"><div>${t('dup.hint.some', { n: fmtNum(h.candidates), size: fmtSize(h.max_reclaim) })}</div>
-    <div class="row">${auto ? `<span class="small muted" id="dupeResult">${esc(t('dup.checking'))}</span>`
-                            : `<button class="ghost small" id="btnDupeCheck">${esc(t('dup.check'))}</button><span class="small" id="dupeResult"></span>`}</div></div>`;
+    <div class="row"><button class="ghost small" id="btnDupeCheck">${esc(t('dup.check'))}</button><span class="small" id="dupeResult"></span></div></div>`;
 }
 /// 내용을 읽어 확정한다. silent 면 전체 화면 진행 창을 띄우지 않는다(자동 확인).
 async function runDupeCheck(silent) {
@@ -226,7 +236,8 @@ async function runDupeCheck(silent) {
   const r = await api.dedupe_check(1024);
   if (poll) clearInterval(poll);
   if (!silent) busy(null);
-  if (r.error) { const el = $('#dupeResult'); if (el) el.textContent = r.error; return; }
+  state.dupeChecking = false;
+  if (r.error) { const el = $('#dupeResult'); if (el) el.textContent = r.error; renderStrategyCards(); return; }
   state.dupeExact = r;
   renderStrategyCards();                       // 배지를 확정값으로
   if (state.strategy === 'dedupe') selectStrategy('dedupe');   // 안내도 확정값으로
@@ -244,11 +255,7 @@ function selectStrategy(id) {
   $('#stratDetail').innerHTML = `<h3>${esc(t(`strat.${id}.name`))} <span class="badge">${esc(t(`strat.${id}.tag`))}</span></h3><p class="muted" style="margin:0">${esc(t(`strat.${id}.desc`))}</p>${id === 'dedupe' ? renderDupeBlock() : ''}<div class="demo" id="demo"></div><div class="kv"><b>${t('p3.best')}</b><span>${esc(t(`strat.${id}.best`))}</span><b>${t('p3.example')}</b><span>${esc(t(`strat.${id}.ex`))}</span></div><div class="opts">${opts}<label class="opt"><span>${t('p3.warn')}<small>${t('p3.warn.s')}</small></span><input type="checkbox" id="optWarn"></label></div>`;
   $('#optWarn').checked = state.includeWarn; $('#optWarn').onchange = e => state.includeWarn = e.target.checked;
   const dc = $('#btnDupeCheck'); if (dc) dc.onclick = () => runDupeCheck(false);
-  // 읽을 양이 적으면 고르는 즉시 자동으로 확정한다 (한 번만)
-  if (id === 'dedupe' && !state.dupeExact && state.scan && state.scan.dupe_hint
-      && state.scan.dupe_hint.candidates && (state.scan.dupe_hint.candidate_bytes || 0) <= DUPE_AUTO_BYTES) {
-    setTimeout(() => runDupeCheck(true), 30);
-  }
+  if (id === 'dedupe') maybeAutoDupeCheck();   // 검사 직후에 못 돌았다면 여기서라도
   runDemo(id);
 }
 function collectOpts() { const o = {}; $$('#stratDetail [data-k]').forEach(el => o[el.dataset.k] = el.type === 'checkbox' ? el.checked : (el.type === 'number' ? +el.value : el.value)); return o; }
