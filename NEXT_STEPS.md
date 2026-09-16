@@ -11,6 +11,11 @@ Arcabit · BitDefender · CTX · Emsisoft · eScan · GData · VIPRE
 Microsoft Defender는 탐지하지 않았습니다 → winget 저장소의 검증 파이프라인(Defender 사용)은 통과할 전망이라 제출을 진행합니다.
 Bitdefender에 오탐 신고를 넣어 두고, 처리되면 7곳이 함께 해제됩니다.
 
+2026-09-16: Bitdefender에서 "수정하겠다"는 회신을 받음. 다만 이 날짜 기준 아직 반영 전이다.
+- 실시간 감시는 더 이상 잡지 않음 (예외 폴더 밖에서 zip 을 풀어도 DLL 이 살아 있음)
+- 그러나 `winget install --manifest` 의 보관 검사는 여전히 탐지 → 서명 DB 갱신이 아직 배포되지 않음
+- 로컬 설치 시험은 `--ignore-local-archive-malware-scan` 을 붙여 진행할 것
+
 ---
 
 ## 1단계. GitHub 계정과 저장소 만들기 (약 10분)  [사용자]
