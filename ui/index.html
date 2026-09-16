@@ -26,6 +26,7 @@
       <button class="ghost small" id="btnReport" data-i18n="side.report" data-i18n-title="side.report.s"></button>
       <div class="hint" data-i18n="side.hint"></div>
       <label class="langbox"><span data-i18n="side.lang"></span><select id="langSel" class="input"></select></label>
+      <button class="edition" id="btnEdition"></button>
       <div class="version" id="version" title="">FoldeClean</div>
       <div class="owner" id="owner"></div>
     </div>
@@ -68,6 +69,11 @@
     <!-- 3. 방식 -->
     <section class="panel" id="p3">
       <header class="ph"><h1 data-i18n="p3.title"></h1><p data-i18n="p3.sub"></p></header>
+      <div class="card pro-row" id="proRow">
+        <div class="pro-head"><span class="pro-tag">PRO</span><b data-i18n="rules.title"></b><span class="muted small" id="rulesSummary"></span></div>
+        <p class="muted small" data-i18n="rules.desc"></p>
+        <button class="ghost small" id="btnRules" data-i18n="rules.open"></button>
+      </div>
       <div class="strat-layout">
         <div class="strat-grid" id="stratGrid"></div>
         <div class="card strat-detail" id="stratDetail"></div>
@@ -104,6 +110,31 @@
   </main>
 
   <div class="modal" id="journalModal" hidden><div class="modal-card"><div class="row between"><h3 data-i18n="j.title"></h3><button class="ghost small" id="btnCloseJ" data-i18n="j.close"></button></div><div id="journalList" class="list"></div></div></div>
+
+  <!-- Pro 안내 -->
+  <div class="modal" id="proModal" hidden><div class="modal-card">
+    <div class="row between"><h3><span class="pro-tag">PRO</span> <span data-i18n="pro.title"></span></h3><button class="ghost small" id="btnProClose" data-i18n="j.close"></button></div>
+    <p class="muted" data-i18n="pro.sub"></p>
+    <ul class="pro-list">
+      <li data-i18n="pro.f1"></li><li data-i18n="pro.f2"></li><li data-i18n="pro.f3"></li><li data-i18n="pro.f4"></li>
+    </ul>
+    <p class="muted small" id="proStatus"></p>
+    <div class="row between"><span class="muted small" data-i18n="pro.price"></span><button class="primary" id="btnTrial" data-i18n="pro.trial"></button></div>
+  </div></div>
+
+  <!-- 규칙 편집기 (Pro) -->
+  <div class="modal" id="rulesModal" hidden><div class="modal-card wide">
+    <div class="row between"><h3><span class="pro-tag">PRO</span> <span data-i18n="rules.title"></span></h3><button class="ghost small" id="btnRulesClose" data-i18n="j.close"></button></div>
+    <p class="muted small" data-i18n="rules.help"></p>
+    <div class="rules-layout">
+      <div class="rules-list" id="rulesList"></div>
+      <div class="rule-edit" id="ruleEdit"></div>
+    </div>
+    <div class="row between">
+      <button class="ghost small" id="btnRuleAdd" data-i18n="rules.add"></button>
+      <div class="row"><span class="muted small" id="rulesSaveInfo"></span><button class="primary" id="btnRulesSave" data-i18n="rules.save"></button></div>
+    </div>
+  </div></div>
 
   <!-- 첫 실행 안내 -->
   <div class="modal" id="welcome" hidden><div class="modal-card welcome">

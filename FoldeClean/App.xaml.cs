@@ -49,6 +49,39 @@ public partial class App : Application
             foreach (var id in new[] { "type", "date", "type_date", "para", "johnny", "archive_old", "dedupe" })
                 plans[id] = Planner.Build(scan.Files, root, Strategies.Make(id, new()), false, new(), 0).Summary;
             log["plans"] = plans;
+
+            // 규칙(Pro) 검증: 폴더 지정 + 치환자, 건너뛰기, 이름 앞에 붙이기, 조건 두 개
+            var baseline = Planner.Build(scan.Files, root, Strategies.Make("type", new()), false, new(), 0);
+            var testRules = new RuleSet
+            {
+                Rules = new()
+                {
+                    new Rule { Id = "a", Name = "보고서 모으기", Action = "folder", Value = "문서/보고서/{year}",
+                        Conditions = new() { new RuleCondition { Field = "name", Op = "contains", Value = "보고서" } } },
+                    new Rule { Id = "b", Name = "PDF 제외", Action = "skip",
+                        Conditions = new() { new RuleCondition { Field = "ext", Op = "equals", Value = "pdf" } } },
+                    new Rule { Id = "c", Name = "압축 표시", Action = "prefix", Value = "[Z] ",
+                        Conditions = new() { new RuleCondition { Field = "ext", Op = "equals", Value = "zip" } } },
+                    new Rule { Id = "d", Name = "큰 동영상", Action = "folder", Value = "큰동영상",
+                        Conditions = new() { new RuleCondition { Field = "ext", Op = "equals", Value = "mp4" },
+                                             new RuleCondition { Field = "size", Op = "gt", Value = "5000" } } },
+                }
+            };
+            var ruled = Planner.Build(scan.Files, root, Strategies.Make("type", new()), false, new(), 0, null, testRules);
+            var prefixed = ruled.Moves.Where(m => m.Rule == "압축 표시").Select(m => Path.GetFileName(m.Dst)).FirstOrDefault();
+            log["rules"] = new Dictionary<string, object?>
+            {
+                ["baseline_moves"] = baseline.Moves.Count,
+                ["ruled_moves"] = ruled.Moves.Count,
+                ["rule_hits"] = ruled.Summary["rule_hits"],
+                ["rule_skips"] = ruled.Summary["rule_skips"],
+                ["pdf_before"] = baseline.Moves.Count(m => m.Ext == "pdf"),
+                ["pdf_after"] = ruled.Moves.Count(m => m.Ext == "pdf"),
+                ["token_ok"] = ruled.Moves.Any(m => m.Rule == "보고서 모으기" && System.Text.RegularExpressions.Regex.IsMatch(m.DstRel, @"보고서.\d{4}$")),
+                ["prefix_sample"] = prefixed,
+                ["prefix_keeps_space"] = prefixed?.StartsWith("[Z] ") ?? false,
+                ["multi_cond_hits"] = ruled.Moves.Count(m => m.Rule == "큰 동영상"),
+            };
             var plan = Planner.Build(scan.Files, root, Strategies.Make("type_date", new()), false, new(), 0);
             var ex = new Executor();
             var jpath = ex.Run(plan.Moves, true, root);

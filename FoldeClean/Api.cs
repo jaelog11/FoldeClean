@@ -26,6 +26,12 @@ public sealed class Api
         "app_info" => AppInfo(),
         "set_lang" => SetLang(Arg(args, 0, "ko")),
         "save_report" => SaveReport(Arg(args, 0, "")),
+        "edition_info" => Edition.Info(),
+        "start_trial" => StartTrial(),
+        "set_license" => SetLicense(Arg(args, 0, "")),
+        "rules_get" => RulesGet(),
+        "rules_save" => RulesSave(Arg(args, 0, new List<Rule>())),
+        "rules_test" => RulesTest(Arg(args, 0, new Rule())),
         "get_progress" => new Dictionary<string, object?> { ["phase"] = _phase, ["count"] = Interlocked.Read(ref _count), ["total"] = Interlocked.Read(ref _total), ["exec"] = _executor.Snapshot() },
         "pick_folder" => PickFolder?.Invoke(),
         "default_folders" => DefaultFolders(),
@@ -65,6 +71,41 @@ public sealed class Api
     };
 
     static object SetLang(string lang) { I18n.Set(lang); return I18n.Lang; }
+
+    // ---------------------------------------------------------------- 판 구분과 규칙 (Pro)
+    static object StartTrial()
+    {
+        if (!Edition.StartTrial()) return Err("체험을 이미 사용했거나 Pro 상태입니다.");
+        return Edition.Info();
+    }
+
+    static object SetLicense(string key) { Edition.SetLicense(key); return Edition.Info(); }
+
+    object RulesGet() => new Dictionary<string, object?>
+    {
+        ["rules"] = RuleSet.Load().Rules,
+        ["pro_active"] = Edition.ProActive,
+        ["scanned"] = _scan?.Files.Count ?? 0,
+    };
+
+    object RulesSave(List<Rule> rules)
+    {
+        if (!Edition.ProActive) return Err("규칙은 Pro 기능입니다.");
+        var set = new RuleSet { Rules = rules ?? new List<Rule>() };
+        foreach (var r in set.Rules)
+            if (string.IsNullOrWhiteSpace(r.Id)) r.Id = Guid.NewGuid().ToString("N")[..8];
+        try { set.Save(); } catch (Exception ex) { Log.Error("rules save", ex); return Err(ex.Message); }
+        return new Dictionary<string, object?> { ["saved"] = set.Rules.Count };
+    }
+
+    /// <summary>편집 중인 규칙을 마지막 검사 결과에 적용해 몇 개가 걸리는지 보여준다.</summary>
+    object RulesTest(Rule rule)
+    {
+        if (_scan == null) return Err("먼저 폴더를 검사하세요.");
+        if (rule == null) return Err("규칙이 비어 있습니다.");
+        var candidates = _scan.Files.Where(f => f.Risk != "block").ToList();
+        return RuleSet.Test(rule, candidates, _scan.Root);
+    }
 
     /// <summary>오류 보고서를 바탕화면에 저장한다. 파일 이름·경로 같은 개인 정보는 담지 않는다 (검사 폴더 경로만).</summary>
     object SaveReport(string userNote)
@@ -144,8 +185,10 @@ public sealed class Api
         try
         {
             var strat = Strategies.Make(strategyId, opts);
+            var rules = Edition.ProActive ? RuleSet.Load() : null;   // 규칙은 Pro 에서만 적용
+            if (rules != null && rules.Rules.Count == 0) rules = null;
             _plan = Planner.Build(_scan.Files, _scan.Root, strat, includeWarn, excludeExts.Select(e => e.ToLowerInvariant().TrimStart('.')).ToHashSet(), minSize,
-                (phase, c, t) => { _phase = phase; Interlocked.Exchange(ref _count, c); Interlocked.Exchange(ref _total, t); });
+                (phase, c, t) => { _phase = phase; Interlocked.Exchange(ref _count, c); Interlocked.Exchange(ref _total, t); }, rules);
             return _plan.ToDict(0);   // 이동 목록은 plan_moves 로 페이지 단위로 가져간다
         }
         catch (Exception ex) { return Err(ex.Message); }

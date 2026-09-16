@@ -80,6 +80,7 @@ public sealed class MoveRec
     [JsonPropertyName("category")] public string Category { get; set; } = "";
     [JsonPropertyName("renamed")] public bool Renamed { get; set; }
     [JsonPropertyName("note")] public string? Note { get; set; }
+    [JsonPropertyName("rule")] public string? Rule { get; set; }   // 적용된 사용자 규칙 이름 (Pro)
 }
 
 public static class TimeUtil

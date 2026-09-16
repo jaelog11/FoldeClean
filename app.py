@@ -19,9 +19,11 @@ from core.safety import SafetyAnalyzer  # noqa: E402
 from core.scanner import scan  # noqa: E402
 from core.strategies import STRATEGY_META, category_breakdown, make_strategy  # noqa: E402
 from core import i18n  # noqa: E402
+from core import edition as ed  # noqa: E402
+from core import rules as rl  # noqa: E402
 
 UI_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui")
-VERSION = "0.1"   # C# 판(FoldeClean.csproj의 Version)과 맞춘다
+VERSION = "0.2"   # C# 판(FoldeClean.csproj의 Version)과 맞춘다
 
 
 class Api:
@@ -91,6 +93,31 @@ class Api:
     def set_lang(self, lang: str):
         return i18n.set_lang(lang)
 
+    # ---------------------------------------------------------------- 판 구분과 규칙 (Pro)
+    def edition_info(self):
+        return ed.info()
+
+    def start_trial(self):
+        if not ed.start_trial():
+            return {"error": "체험을 이미 사용했거나 Pro 상태입니다."}
+        return ed.info()
+
+    def rules_get(self):
+        return {"rules": rl.load(), "pro_active": ed.pro_active(),
+                "scanned": len(self._scan_result.files) if self._scan_result else 0}
+
+    def rules_save(self, rules: list | None = None):
+        if not ed.pro_active():
+            return {"error": "규칙은 Pro 기능입니다."}
+        return {"saved": rl.save(rules or [])}
+
+    def rules_test(self, rule: dict | None = None):
+        if self._scan_result is None:
+            return {"error": "먼저 폴더를 검사하세요."}
+        if not rule:
+            return {"error": "규칙이 비어 있습니다."}
+        return rl.test(rule, [f for f in self._scan_result.files if f.risk != "block"])
+
     def save_report(self, note: str = ""):
         """오류 보고서를 바탕화면에 저장 (파일 이름 같은 개인 정보는 담지 않음)."""
         import datetime as dt
@@ -115,8 +142,10 @@ class Api:
         self._set_progress("plan", 0, 0)
         try:
             strat = make_strategy(strategy_id, opts or {})
+            active_rules = rl.load() if ed.pro_active() else None
             plan = build_plan(self._scan_result.files, self._scan_result.root, strat, dest_root=dest_root or None,
-                              include_warn=include_warn, exclude_exts=set(exclude_exts or []), min_size=int(min_size or 0))
+                              include_warn=include_warn, exclude_exts=set(exclude_exts or []), min_size=int(min_size or 0),
+                              rules=active_rules or None)
         except Exception as e:  # noqa: BLE001
             traceback.print_exc()
             self._set_progress("idle")

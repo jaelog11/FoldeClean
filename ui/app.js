@@ -73,7 +73,7 @@ $('#btnReport').onclick = async () => {
   toast(t('report.saved', { path: r.path }), 6000);
 };
 function rerender() {   // 언어가 바뀌면 현재 화면을 새 문구로 다시 그린다
-  applyI18n(); initVersion(); initFolders();
+  applyI18n(); initVersion(); initFolders(); initEdition();
   if (state.scan) renderScan(state.scan);
   if (state.strategies.length) { renderStrategyCards(); selectStrategy(state.strategy); }
   if (state.plan) renderPlan(state.plan);
@@ -245,7 +245,8 @@ async function drawRows() {
     const m = mvCache.get(i); if (!m) continue;
     const noteText = m.note ? tCode(m.note) : '';
     const origPath = m.note && m.note.startsWith('dup|') ? m.note.slice(4) : '';
-    const sub = m.note ? `<small class="note" title="${esc(noteText)}">${esc(noteText)}</small>` : `<small class="note muted">${esc(m.src)}</small>`;
+    const subText = m.rule ? t('p4.byrule', { a: m.rule }) : noteText;
+    const sub = subText ? `<small class="note" title="${esc(subText)}">${esc(subText)}</small>` : `<small class="note muted">${esc(m.src)}</small>`;
     html += `<div class="vrow ${m.risk}" style="transform:translateY(${i * ROW}px);position:absolute;left:0;right:0"><input type="checkbox" data-src="${esc(m.src)}" ${state.selected.has(m.src) ? 'checked' : ''}><span class="n"><a href="#" class="open" data-open="${esc(m.src)}" title="${t('p4.open')}">${esc(m.name)}</a>${sub}</span><span class="arrow">→</span><span class="d" title="${esc(m.dst)}">${esc(m.dst_rel)}${m.renamed ? ` <i style="color:var(--warn)">${t('p4.renamed')}</i>` : ''}</span><span class="sz">${fmtSize(m.size)}</span><button class="ico" data-reveal="${esc(m.src)}" title="${t('p4.reveal')}">📂</button>${origPath ? `<button class="ico" data-reveal="${esc(origPath)}" title="${t('p4.orig')}">🔍</button>` : '<span></span>'}</div>`;
   }
   $('#vrows').innerHTML = html;
@@ -286,7 +287,128 @@ $('#btnJournals').onclick = async () => {
 };
 $('#btnCloseJ').onclick = () => $('#journalModal').hidden = true;
 
+// ---------------------------------------------------------------- 판 구분(Standard/체험/Pro)
+let edition = { edition: 'standard', pro_active: false };
+async function initEdition() {
+  try { edition = await api.edition_info(); } catch (e) { return; }
+  const b = $('#btnEdition');
+  b.className = 'edition ' + (edition.edition || 'standard');
+  b.textContent = edition.edition === 'pro' ? t('edition.pro')
+    : edition.edition === 'trial' ? t('edition.trial', { n: edition.trial_days_left })
+    : t('edition.standard');
+  $('#proRow').classList.toggle('locked', !edition.pro_active);
+  await refreshRulesSummary();
+}
+async function refreshRulesSummary() {
+  try {
+    const r = await api.rules_get();
+    rulesState.list = (r.rules || []).map(normRule);
+    const n = rulesState.list.filter(x => x.enabled).length;
+    $('#rulesSummary').textContent = n ? t('rules.summary', { n }) : t('rules.summary0');
+  } catch (e) { /* 구버전 백엔드 */ }
+}
+function openPro() {
+  const e = edition;
+  $('#proStatus').textContent = e.edition === 'pro' ? t('pro.status.pro')
+    : e.edition === 'trial' ? t('pro.status.trial', { n: e.trial_days_left })
+    : e.trial_used ? t('pro.status.used') : t('pro.status.none');
+  const canTrial = !e.pro_active && !e.trial_used;
+  const btn = $('#btnTrial');
+  btn.textContent = canTrial ? t('pro.trial') : t('pro.soon');
+  btn.disabled = !canTrial;
+  $('#proModal').hidden = false;
+}
+$('#btnEdition').onclick = openPro;
+$('#btnProClose').onclick = () => $('#proModal').hidden = true;
+$('#btnTrial').onclick = async () => {
+  const r = await api.start_trial();
+  if (r.error) return toast(r.error);
+  $('#proModal').hidden = true;
+  await initEdition();
+  toast(t('pro.status.trial', { n: r.trial_days_left }), 5000);
+};
+
+// ---------------------------------------------------------------- 내 규칙 (Pro)
+const FIELDS = ['name', 'ext', 'size', 'age', 'dir', 'path'];
+const OPS_TEXT = ['contains', 'not_contains', 'equals', 'starts', 'ends', 'regex'];
+const OPS_NUM = ['gt', 'lt', 'equals'];
+const ACTIONS = ['folder', 'skip', 'prefix', 'suffix'];
+const opsFor = f => (f === 'size' || f === 'age') ? OPS_NUM : OPS_TEXT;
+const rulesState = { list: [], sel: -1 };
+const normRule = r => ({ id: r.id || '', enabled: r.enabled !== false, name: r.name || '', conditions: (r.conditions || []).map(c => ({ field: c.field || 'name', op: c.op || 'contains', value: c.value || '' })), action: r.action || 'folder', value: r.value || '' });
+
+$('#btnRules').onclick = openRules;
+$('#proRow').addEventListener('click', e => { if (!edition.pro_active && !e.target.closest('#btnRules')) openPro(); });
+$('#btnRulesClose').onclick = () => $('#rulesModal').hidden = true;
+
+async function openRules() {
+  if (!edition.pro_active) return openPro();
+  await refreshRulesSummary();
+  rulesState.sel = rulesState.list.length ? 0 : -1;
+  renderRules();
+  $('#rulesModal').hidden = false;
+}
+function renderRules() {
+  const L = $('#rulesList');
+  L.innerHTML = rulesState.list.length
+    ? rulesState.list.map((r, i) => `<div class="rule-item ${i === rulesState.sel ? 'sel' : ''} ${r.enabled ? '' : 'off'}" data-i="${i}"><input type="checkbox" data-en="${i}" ${r.enabled ? 'checked' : ''}><span class="rn">${esc(r.name || t('rules.newname'))}</span></div>`).join('')
+    : `<div class="muted small">${t('rules.none')}</div>`;
+  $$('#rulesList .rule-item').forEach(el => el.onclick = ev => {
+    if (ev.target.dataset.en !== undefined) return;
+    rulesState.sel = +el.dataset.i; renderRules();
+  });
+  $$('#rulesList [data-en]').forEach(cb => cb.onchange = () => { rulesState.list[+cb.dataset.en].enabled = cb.checked; renderRules(); });
+  renderRuleEdit();
+}
+function renderRuleEdit() {
+  const box = $('#ruleEdit');
+  const r = rulesState.list[rulesState.sel];
+  if (!r) { box.innerHTML = `<div class="muted small">${t('rules.pick')}</div>`; return; }
+  const sel = (opts, cur, attr, tag) => `<select class="input" ${attr}>${opts.map(o => `<option value="${o}" ${o === cur ? 'selected' : ''}>${esc(t(tag + '.' + o))}</option>`).join('')}</select>`;
+  const conds = r.conditions.map((c, i) => `<div class="cond">
+      ${sel(FIELDS, c.field, `data-cf="${i}"`, 'field')}
+      ${sel(opsFor(c.field), c.op, `data-co="${i}"`, 'op')}
+      <input class="input" data-cv="${i}" value="${esc(c.value)}">
+      <button class="icobtn" data-cd="${i}">✕</button>
+    </div>`).join('');
+  box.innerHTML = `
+    <div class="fr"><span>${t('rules.name')}</span><input class="input" id="rName" value="${esc(r.name)}"></div>
+    <div class="fr"><span>${t('rules.conditions')}</span><div>${conds}<button class="ghost small" id="rAddCond">${t('rules.addcond')}</button></div></div>
+    <div class="fr"><span>${t('rules.action')}</span>${sel(ACTIONS, r.action, 'id="rAction"', 'act')}</div>
+    ${r.action === 'skip' ? '' : `<div class="fr"><span>${t('rules.value')}</span><div><input class="input" id="rValue" value="${esc(r.value)}"><div class="tokens">${r.action === 'folder' ? esc(t('rules.tokens')) : ''}</div></div></div>`}
+    <div class="row"><button class="ghost small" id="rTest">${t('rules.test')}</button><button class="icobtn" id="rDel">${t('rules.delete')}</button></div>
+    <div class="testbox" id="rTestBox" hidden></div>`;
+  $('#rName').oninput = e => { r.name = e.target.value; const it = $(`.rule-item[data-i="${rulesState.sel}"] .rn`); if (it) it.textContent = r.name || t('rules.newname'); };
+  $$('#ruleEdit [data-cf]').forEach(s2 => s2.onchange = () => { const i = +s2.dataset.cf; r.conditions[i].field = s2.value; r.conditions[i].op = opsFor(s2.value)[0]; renderRuleEdit(); });
+  $$('#ruleEdit [data-co]').forEach(s2 => s2.onchange = () => r.conditions[+s2.dataset.co].op = s2.value);
+  $$('#ruleEdit [data-cv]').forEach(inp => inp.oninput = () => r.conditions[+inp.dataset.cv].value = inp.value);
+  $$('#ruleEdit [data-cd]').forEach(b => b.onclick = () => { r.conditions.splice(+b.dataset.cd, 1); renderRuleEdit(); });
+  $('#rAddCond').onclick = () => { r.conditions.push({ field: 'name', op: 'contains', value: '' }); renderRuleEdit(); };
+  $('#rAction').onchange = e => { r.action = e.target.value; renderRuleEdit(); };
+  const rv = $('#rValue'); if (rv) rv.oninput = e => r.value = e.target.value;
+  $('#rDel').onclick = () => { rulesState.list.splice(rulesState.sel, 1); rulesState.sel = Math.min(rulesState.sel, rulesState.list.length - 1); renderRules(); };
+  $('#rTest').onclick = async () => {
+    const res = await api.rules_test(r);
+    const box2 = $('#rTestBox'); box2.hidden = false;
+    if (res.error) { box2.innerHTML = `<span class="muted">${esc(t('rules.testneed'))}</span>`; return; }
+    const list = (res.samples || []).map(s2 => `<li>${esc(s2.name)}${s2.dest ? ' → ' + esc(s2.dest) : ''}</li>`).join('');
+    box2.innerHTML = `<span class="hit">${esc(t('rules.testhit', { n: fmtNum(res.count) }))}</span>${list ? `<ul>${list}</ul>` : ''}`;
+  };
+}
+$('#btnRuleAdd').onclick = () => {
+  rulesState.list.push(normRule({ name: t('rules.newname'), conditions: [{ field: 'name', op: 'contains', value: '' }], action: 'folder', value: '' }));
+  rulesState.sel = rulesState.list.length - 1;
+  renderRules();
+};
+$('#btnRulesSave').onclick = async () => {
+  const res = await api.rules_save(rulesState.list);
+  if (res.error) return toast(res.error);
+  await refreshRulesSummary();
+  $('#rulesSaveInfo').textContent = t('rules.saved', { n: res.saved });
+  toast(t('rules.saved', { n: res.saved }));
+};
+
 // ---------------------------------------------------------------- 시작
-function start() { initLang(); initVersion(); initFolders(); initStrategies(); initWelcome(); }
+function start() { initLang(); initVersion(); initFolders(); initStrategies(); initEdition(); initWelcome(); }
 if (wv2 || (window.pywebview && window.pywebview.api)) start(); else { window.addEventListener('pywebviewready', start, { once: true }); setTimeout(() => { if (!window.pywebview) start(); }, 300); }
 window.addEventListener('resize', () => { if (state.plan && state.step === 4) renderFlow(state.plan.flows, state.plan.src_groups, state.plan.dest_tree); if (state.step === 3) runDemo(state.strategy); });

@@ -25,9 +25,14 @@ def _unique_dest(dest: str, taken: set[str]) -> str:
         i += 1
 
 
+def _first_rule(rules: list[dict], f: FileInfo) -> dict | None:
+    from . import rules as _rl
+    return _rl.first_match(rules, f)
+
+
 def build_plan(files: list[FileInfo], root: str, strategy: Strategy, dest_root: str | None = None,
                include_warn: bool = False, exclude_exts: set[str] | None = None,
-               min_size: int = 0, max_moves: int | None = None) -> dict:
+               min_size: int = 0, max_moves: int | None = None, rules: list[dict] | None = None) -> dict:
     root = os.path.abspath(root)
     dest_root = os.path.abspath(dest_root or root)
     exclude_exts = {e.lower().lstrip(".") for e in (exclude_exts or set())}
@@ -47,7 +52,28 @@ def build_plan(files: list[FileInfo], root: str, strategy: Strategy, dest_root: 
     src_dirs: dict[str, dict] = defaultdict(lambda: {"count": 0, "size": 0})
 
     for f in candidates:
-        rel = strategy.dest_dir(f, root)
+        # 규칙(Pro)이 전략보다 먼저. 처음 맞는 하나만 적용된다.
+        rel = None
+        rule_name = None
+        file_name = f.name
+        matched = _first_rule(rules, f) if rules else None
+        if matched is not None:
+            from . import rules as _rl
+            rule_name = matched.get("name") or matched.get("id")
+            act = matched.get("action", "folder")
+            if act == "skip":
+                continue
+            if act == "folder":
+                exp = _rl.expand(matched.get("value", ""), f).strip()   # 폴더 이름에서만 공백 정리
+                if exp:
+                    rel = exp
+            elif act == "prefix":
+                file_name = _rl.expand(matched.get("value", ""), f) + f.name
+            elif act == "suffix":
+                stem, ext_ = os.path.splitext(f.name)
+                file_name = stem + _rl.expand(matched.get("value", ""), f) + ext_
+        if rel is None:
+            rel = strategy.dest_dir(f, root)
         if rel is None:
             continue
         rel = os.path.normpath(rel)
@@ -56,7 +82,7 @@ def build_plan(files: list[FileInfo], root: str, strategy: Strategy, dest_root: 
             skipped_same += 1
             continue
         # 목적지 폴더 안에 이미 있는 파일을 다시 그 안으로 넣는 경우 방지 (하위 정리 시)
-        dest = _unique_dest(os.path.join(target_dir, f.name), taken)
+        dest = _unique_dest(os.path.join(target_dir, file_name), taken)
         src_rel = os.path.relpath(os.path.dirname(f.path), root)
         src_rel = i18n.name("root") if src_rel == "." else src_rel.split(os.sep)[0]
         top_dest = rel.split(os.sep)[0]
@@ -65,7 +91,7 @@ def build_plan(files: list[FileInfo], root: str, strategy: Strategy, dest_root: 
             "src": f.path, "dst": dest, "name": f.name, "size": f.size, "ext": f.ext,
             "risk": f.risk, "reasons": f.reasons, "src_group": src_rel, "dst_group": top_dest,
             "dst_rel": rel, "category": label, "renamed": os.path.basename(dest) != f.name,
-            "note": strategy.note(f),
+            "note": strategy.note(f), "rule": rule_name,
         })
         fl = flows[(src_rel, top_dest)]
         fl["count"] += 1; fl["size"] += f.size

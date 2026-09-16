@@ -23,6 +23,31 @@ button,input{font:inherit;color:inherit}
 .side-foot{margin-top:auto;display:flex;flex-direction:column;gap:8px}.hint{font-size:11px;color:var(--muted);line-height:1.4}
 .version{font-size:11px;color:var(--muted);opacity:.7;padding-top:6px;border-top:1px solid var(--line);letter-spacing:.2px}
 .owner{font-size:11px;color:var(--muted);opacity:.7}
+/* 판 구분과 Pro */
+.edition{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;color:var(--muted);text-align:left;transition:.15s}
+.edition:hover{border-color:var(--accent2);color:var(--text)}
+.edition.pro,.edition.trial{background:linear-gradient(135deg,rgba(143,108,255,.18),rgba(108,140,255,.18));border-color:var(--accent2);color:var(--text)}
+.pro-tag{display:inline-block;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:10px;font-weight:800;letter-spacing:.5px;padding:2px 7px;border-radius:999px;vertical-align:middle}
+.pro-row{border-color:var(--accent2);background:linear-gradient(135deg,color-mix(in srgb,var(--accent2) 8%,var(--card)),var(--card))}
+.pro-row.locked{opacity:.75}
+.pro-head{display:flex;gap:10px;align-items:center;margin-bottom:4px}.pro-head b{font-size:14px}
+.pro-row p{margin:0 0 10px}
+.pro-list{margin:6px 0 12px;padding-left:20px;line-height:1.7;font-size:13px}.pro-list li::marker{color:var(--accent2)}
+.modal-card.wide{width:min(940px,94vw)}
+.rules-layout{display:grid;grid-template-columns:230px 1fr;gap:14px;margin:12px 0;min-height:320px}
+.rules-list{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow:auto}
+.rule-item{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;background:var(--card2);border:1px solid var(--line);border-radius:9px;padding:8px 10px;cursor:pointer;font-size:13px}
+.rule-item:hover{border-color:var(--accent)}.rule-item.sel{border-color:var(--accent);box-shadow:0 0 0 2px rgba(108,140,255,.2)}
+.rule-item .rn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}.rule-item.off .rn{opacity:.5;text-decoration:line-through}
+.rule-edit{background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:14px;overflow:auto;max-height:420px}
+.rule-edit .fr{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:center;margin-bottom:10px;font-size:13px}
+.cond{display:grid;grid-template-columns:1fr 1fr 1.4fr auto;gap:6px;margin-bottom:6px}
+.cond select,.cond input{padding:7px 8px;font-size:12px}
+.icobtn{background:none;border:1px solid var(--line);border-radius:7px;color:var(--muted);cursor:pointer;padding:4px 8px;font-size:12px}.icobtn:hover{border-color:var(--bad);color:var(--bad)}
+.testbox{background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:10px;margin-top:10px;font-size:12px;max-height:150px;overflow:auto}
+.testbox .hit{color:var(--ok);font-weight:700}.testbox ul{margin:6px 0 0;padding-left:18px;color:var(--muted)}
+.tokens{font-size:11px;color:var(--muted);margin-top:4px}
+.tokens code{background:var(--bg2);border-radius:4px;padding:1px 5px}
 .modal-card.welcome{width:min(560px,92vw);text-align:left}.welcome img{display:block;margin:0 auto 10px;border-radius:14px}.welcome h2{text-align:center;margin:0 0 14px;font-size:20px}
 .welcome ol{margin:0 0 12px;padding-left:22px;line-height:1.6}.welcome li{margin-bottom:6px}.welcome li::marker{color:var(--accent);font-weight:700}
 .langbox{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}.langbox select{padding:5px 8px;font-size:12px;border-radius:8px}
