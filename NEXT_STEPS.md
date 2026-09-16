@@ -1,7 +1,21 @@
 # 따라 하기: winget 배포부터 Pro 판매까지
 
 각 단계는 **[사용자]** 가 직접 하는 일과 **[Claude]** 가 하는 일로 나뉩니다. 사용자 단계가 끝나면 채팅에 "N단계 완료"라고 알려주세요. 그러면 제가 다음 단계를 이어갑니다.
-현재 위치: **7단계 직전** (2026-09-13. 1·2·3·4·5단계 완료. GitHub 저장소 jaelog11/FoldeClean, Release v0.1.0 게시, 해시 일치 확인)
+현재 위치: **7단계 심사 대기** (2026-09-16)
+
+### winget 제출 현황
+- Pull Request: https://github.com/microsoft/winget-pkgs/pull/435786 (`Jaelog.FoldeClean version 0.1.0`)
+- CLA 서명 완료 (`Needs-CLA` 라벨 해제)
+- **자동 검증 통과**: `Azure-Pipeline-Passed`, `Validation-Completed`
+  → Microsoft 쪽 가상 머신에서 실제 설치와 Windows Defender 검사를 모두 통과. Bitdefender 오탐은 이 심사에 영향 없음이 확인됨
+- 남은 것: 커뮤니티 운영자(자원봉사)의 검토와 병합. 며칠 걸릴 수 있으며 사용자가 할 일은 없음
+- 병합되면 누구나 `winget install Jaelog.FoldeClean` 으로 설치 가능
+
+기다리는 동안 8단계(알리기)와 9단계(Pro 골격)를 진행할 수 있습니다.
+
+---
+
+(이전 기록) (2026-09-13. 1·2·3·4·5단계 완료. GitHub 저장소 jaelog11/FoldeClean, Release v0.1.0 게시, 해시 일치 확인)
 
 ### 4단계 백신 검사 결과 (2026-09-13, VirusTotal)
 탐지 7건, 모두 같은 서명 `Gen:Heur.Ransom.HiddenTears.1`:
