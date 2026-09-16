@@ -188,7 +188,7 @@ public sealed class Api
         _phase = "scan"; _count = 0; _total = 0;
         var res = Scanner.Scan(root, c => Interlocked.Exchange(ref _count, c), depth);
         _phase = "prepare"; _count = 0; _total = res.Files.Count;      // 바로가기·레지스트리 수집
-        var analyzer = new SafetyAnalyzer(root, checkLocks);
+        var analyzer = new SafetyAnalyzer(root, checkLocks, scanDepth: depth);
         _phase = "analyze";
         var info = analyzer.Analyze(res.Files, i => Interlocked.Exchange(ref _count, i), (n, t) => { _phase = "locks"; Interlocked.Exchange(ref _count, n); Interlocked.Exchange(ref _total, t); });
         _scan = res; _plan = null; _phase = "idle";

@@ -77,8 +77,9 @@ class Api:
         depth = max(0, min(int(depth or 0), 50))
         self._set_progress("scan", 0, 0)
         res = scan(root, max_depth=depth, progress=lambda c: self._set_progress("scan", c, 0))
+        self._set_progress("prepare", 0, len(res.files))   # 바로가기·레지스트리 수집 (얼마나 남았는지 셀 수 없음)
+        analyzer = SafetyAnalyzer(root, check_locks=check_locks, scan_depth=depth)
         self._set_progress("analyze", 0, len(res.files))
-        analyzer = SafetyAnalyzer(root, check_locks=check_locks)
         info = analyzer.analyze(res.files, progress=lambda i: self._set_progress("analyze", i, len(res.files)))
         self._scan_result = res
         self._plan = None

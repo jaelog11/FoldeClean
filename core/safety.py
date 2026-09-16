@@ -88,17 +88,30 @@ def shortcut_dirs() -> list[str]:
     return [c for c in cands if c and os.path.isdir(c)]
 
 
-def collect_shortcut_targets(extra_dirs: list[str] | None = None) -> dict[str, str]:
-    """{대상경로(normcase): 바로가기 경로}"""
+def collect_shortcut_targets(extra_dirs: list[str] | None = None, extra_recursive: bool = True) -> dict[str, str]:
+    """{대상경로(normcase): 바로가기 경로}. 정리 대상 폴더는 검사 범위와 같은 깊이만 본다."""
     out: dict[str, str] = {}
-    for d in shortcut_dirs() + (extra_dirs or []):
-        for cur, _dirs, names in os.walk(d):
+
+    def collect(d: str, recursive: bool) -> None:
+        if recursive:
+            walker = os.walk(d)
+        else:
+            try:
+                walker = [(d, [], [n for n in os.listdir(d) if os.path.isfile(os.path.join(d, n))])]
+            except OSError:
+                return
+        for cur, _dirs, names in walker:
             for n in names:
                 if n.lower().endswith(".lnk"):
                     lp = os.path.join(cur, n)
                     t = parse_lnk_target(lp)
                     if t:
                         out[os.path.normcase(os.path.abspath(t))] = lp
+
+    for d in shortcut_dirs():
+        collect(d, True)
+    for d in (extra_dirs or []):
+        collect(d, extra_recursive)
     return out
 
 
@@ -191,10 +204,10 @@ def is_locked(path: str) -> bool:
 
 # ---------------------------------------------------------------- 분석기
 class SafetyAnalyzer:
-    def __init__(self, root: str, check_locks: bool = True, lock_check_limit: int = 5000):
+    def __init__(self, root: str, check_locks: bool = True, lock_check_limit: int = 5000, scan_depth: int = 50):
         self.root = os.path.abspath(root)
         self.sys_roots = system_roots()
-        self.shortcuts = collect_shortcut_targets([self.root])
+        self.shortcuts = collect_shortcut_targets([self.root], scan_depth > 0)
         self.shortcut_dirs = {os.path.dirname(p) for p in self.shortcuts}
         self.reg_paths = collect_registry_paths()
         self.check_locks = check_locks

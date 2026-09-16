@@ -27,6 +27,8 @@ const PHASES = {
   analyze: p => t('busy.analyze', { n: fmtNum(p.count), t: fmtNum(p.total) }), locks: p => t('busy.locks', { n: fmtNum(p.count), t: fmtNum(p.total) }),
   hash: p => t('busy.hash', { n: fmtSize(p.count), t: fmtSize(p.total) }), plan: p => t('busy.plan', { n: fmtNum(p.count), t: fmtNum(p.total) }),
 };
+// 얼마나 남았는지 셀 수 없는 단계. 0% 로 떨어뜨리지 않고 흐르는 막대를 보여준다.
+const INDET_PHASES = new Set(['scan', 'prepare']);
 function watchProgress(fallback) {
   const t0 = Date.now();
   return setInterval(async () => {
@@ -34,8 +36,9 @@ function watchProgress(fallback) {
     $('#busyText').textContent = f ? f(p) : fallback;
     $('#busyElapsed').textContent = t('busy.elapsed', { s: Math.round((Date.now() - t0) / 1000) });
     const bar = $('#busyBar');
-    if (p.total > 0) { const pct = Math.min(100, p.count / p.total * 100); bar.classList.remove('indet'); bar.style.width = pct + '%'; $('#busyPct').textContent = Math.round(pct) + '%'; }
-    else { bar.classList.add('indet'); $('#busyPct').textContent = ''; }
+    const known = !INDET_PHASES.has(p.phase) && p.total > 0 && p.count > 0;
+    if (known) { const pct = Math.min(100, p.count / p.total * 100); bar.classList.remove('indet'); bar.style.width = pct + '%'; $('#busyPct').textContent = Math.round(pct) + '%'; }
+    else { bar.classList.add('indet'); bar.style.width = ''; $('#busyPct').textContent = ''; }
   }, 250);
 }
 function go(step) {

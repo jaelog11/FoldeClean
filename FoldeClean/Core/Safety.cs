@@ -30,11 +30,11 @@ public sealed class SafetyAnalyzer
     public int ShortcutCount => _shortcuts.Count;
     public int RegistryCount => _regPaths.Count;
 
-    public SafetyAnalyzer(string root, bool checkLocks = true, int lockCheckLimit = 5000)
+    public SafetyAnalyzer(string root, bool checkLocks = true, int lockCheckLimit = 5000, int scanDepth = 50)
     {
         _root = Path.GetFullPath(root);
         _sysRoots = SystemRoots();
-        _shortcuts = CollectShortcutTargets(new[] { _root });
+        _shortcuts = CollectShortcutTargets(new[] { _root }, scanDepth > 0);
         _regPaths = CollectRegistryPaths();
         _checkLocks = checkLocks;
         _lockLimit = lockCheckLimit;
@@ -94,20 +94,30 @@ public sealed class SafetyAnalyzer
         return c.Where(d => d.Length > 0 && Directory.Exists(d));
     }
 
-    static Dictionary<string, string> CollectShortcutTargets(IEnumerable<string> extra)
+    /// <summary>
+    /// 바로가기가 가리키는 파일을 모은다. 바탕화면·시작 메뉴는 늘 하위까지 보고,
+    /// 정리 대상 폴더(root)는 검사 범위와 같은 깊이만 본다.
+    /// 예전에는 root 도 무조건 하위 전체를 훑어, "이 폴더의 파일만" 검사인데도 오래 걸렸다.
+    /// </summary>
+    static Dictionary<string, string> CollectShortcutTargets(IEnumerable<string> extra, bool extraRecursive)
     {
         var map = new Dictionary<string, string>();
-        var opts = new EnumerationOptions { IgnoreInaccessible = true, RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint };
-        foreach (var d in ShortcutDirs().Concat(extra))
+        var deep = new EnumerationOptions { IgnoreInaccessible = true, RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint };
+        var flat = new EnumerationOptions { IgnoreInaccessible = true, RecurseSubdirectories = false, AttributesToSkip = FileAttributes.ReparsePoint };
+
+        void Collect(string dir, EnumerationOptions opts)
         {
             IEnumerable<string> files;
-            try { files = Directory.EnumerateFiles(d, "*.lnk", opts); } catch { continue; }
+            try { files = Directory.EnumerateFiles(dir, "*.lnk", opts); } catch { return; }
             foreach (var lp in files)
             {
                 var t = ParseLnkTarget(lp);
                 if (t != null) { try { map[Norm(Path.GetFullPath(t))] = lp; } catch { } }
             }
         }
+
+        foreach (var d in ShortcutDirs()) Collect(d, deep);
+        foreach (var d in extra) Collect(d, extraRecursive ? deep : flat);
         return map;
     }
 
