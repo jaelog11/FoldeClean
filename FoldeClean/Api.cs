@@ -42,7 +42,7 @@ public sealed class Api
         "plan_moves" => PlanMoves(Arg(args, 0, 0), Arg(args, 1, 500), Arg(args, 2, ""), Arg(args, 3, "")),
         "plan_flows" => PlanFlows(Arg(args, 0, "")),
         "exclude_moves" => ExcludeMoves(Arg(args, 0, new List<string>())),
-        "execute" => Execute(Arg(args, 0, true)),
+        "execute" => Execute(Arg(args, 0, true), Arg(args, 1, ""), Arg(args, 2, "")),
         "cancel" => Cancel(),
         "journals" => Executor.ListJournals(),
         "undo" => Undo(Arg(args, 0, "")),
@@ -221,10 +221,13 @@ public sealed class Api
         finally { _phase = "idle"; }
     }
 
-    /// <summary>dest 가 주어지면 그 폴더(하위 포함)로 가는 파일만 추린다. 폴더 구조를 눌렀을 때 쓴다.</summary>
-    object PlanMoves(int offset, int limit, string query, string dest)
+    /// <summary>
+    /// 화면의 이동 목록과 똑같은 규칙으로 추린다. 목록에 보이는 것이 곧 실행될 것이 되도록
+    /// 미리보기와 실행이 이 함수 하나를 함께 쓴다.
+    /// </summary>
+    List<MoveRec> FilteredMoves(string dest, string query)
     {
-        if (_plan == null) return new Dictionary<string, object?> { ["items"] = new List<MoveRec>(), ["total"] = 0 };
+        if (_plan == null) return new List<MoveRec>();
         IEnumerable<MoveRec> moves = _plan.Moves;
         if (!string.IsNullOrEmpty(dest))
         {
@@ -233,8 +236,18 @@ public sealed class Api
             moves = moves.Where(m => m.DstRel.Equals(d, StringComparison.OrdinalIgnoreCase)
                                   || m.DstRel.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
         }
-        if (!string.IsNullOrEmpty(query)) { var q = query.ToLowerInvariant(); moves = moves.Where(m => m.Name.ToLowerInvariant().Contains(q) || m.DstRel.ToLowerInvariant().Contains(q)); }
-        var list = moves.ToList();
+        if (!string.IsNullOrEmpty(query))
+        {
+            var q = query.ToLowerInvariant();
+            moves = moves.Where(m => m.Name.ToLowerInvariant().Contains(q) || m.DstRel.ToLowerInvariant().Contains(q));
+        }
+        return moves.ToList();
+    }
+
+    /// <summary>dest 가 주어지면 그 폴더(하위 포함)로 가는 파일만 추린다. 폴더 구조를 눌렀을 때 쓴다.</summary>
+    object PlanMoves(int offset, int limit, string query, string dest)
+    {
+        var list = FilteredMoves(dest, query);
         return new Dictionary<string, object?> { ["items"] = list.Skip(offset).Take(limit).ToList(), ["total"] = list.Count };
     }
 
@@ -253,11 +266,18 @@ public sealed class Api
         return before - _plan.Moves.Count;
     }
 
-    object Execute(bool removeEmptyDirs)
+    /// <summary>
+    /// 화면의 이동 목록에 보이는 것만 옮긴다. 폴더를 눌러 좁혀 놓았으면 그 범위만 실행된다.
+    /// (예전에는 걸러진 목록을 보여주면서 실제로는 계획 전체를 옮겨, 1건인 줄 알고 눌렀는데 98건이 옮겨졌다.)
+    /// </summary>
+    object Execute(bool removeEmptyDirs, string dest, string query)
     {
-        if (_plan == null || _plan.Moves.Count == 0) return Err("실행할 계획이 없습니다.");
+        if (_plan == null) return Err("실행할 계획이 없습니다.");
         if (_executor.Running) return Err("이미 실행 중입니다.");
-        var moves = _plan.Moves.ToList(); var root = _plan.Root;
+        var moves = FilteredMoves(dest, query);
+        if (moves.Count == 0) return Err("실행할 계획이 없습니다.");
+        var root = _plan.Root;
+        Log.Info($"execute start: {moves.Count} moves (dest='{dest}', query='{query}') of {_plan.Moves.Count} planned");
         Task.Run(() => _executor.Run(moves, removeEmptyDirs, root));
         return new Dictionary<string, object?> { ["started"] = true, ["total"] = moves.Count };
     }

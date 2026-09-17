@@ -178,10 +178,10 @@ class Api:
         out["moves_total"] = len(plan["moves"])
         return out
 
-    def plan_moves(self, offset: int = 0, limit: int = 500, query: str = "", dest: str = ""):
-        """dest 가 주어지면 그 폴더(하위 포함)로 가는 파일만 추린다."""
+    def _filtered_moves(self, dest: str = "", query: str = "") -> list[dict]:
+        """화면의 이동 목록과 같은 규칙으로 추린다. 미리보기와 실행이 이 함수를 함께 쓴다."""
         if not self._plan:
-            return {"items": [], "total": 0}
+            return []
         moves = self._plan["moves"]
         if dest:
             d = dest.strip().replace("/", os.sep).strip(os.sep).lower()
@@ -190,6 +190,10 @@ class Api:
         if query:
             q = query.lower()
             moves = [m for m in moves if q in m["name"].lower() or q in m["dst_rel"].lower()]
+        return moves
+
+    def plan_moves(self, offset: int = 0, limit: int = 500, query: str = "", dest: str = ""):
+        moves = self._filtered_moves(dest, query)
         return {"items": moves[offset: offset + limit], "total": len(moves)}
 
     def plan_flows(self, dest: str = ""):
@@ -207,12 +211,15 @@ class Api:
         return before - len(self._plan["moves"])
 
     # ---------------------------------------------------------------- 실행
-    def execute(self, remove_empty_dirs: bool = True):
-        if not self._plan or not self._plan["moves"]:
+    def execute(self, remove_empty_dirs: bool = True, dest: str = "", query: str = ""):
+        """화면의 이동 목록에 보이는 것만 옮긴다 (폴더로 좁혀 놓았으면 그 범위만)."""
+        if not self._plan:
             return {"error": "실행할 계획이 없습니다."}
         if self._executor.snapshot()["running"]:
             return {"error": "이미 실행 중입니다."}
-        moves = list(self._plan["moves"])
+        moves = list(self._filtered_moves(dest, query))
+        if not moves:
+            return {"error": "실행할 계획이 없습니다."}
         root = self._plan["root"]
 
         def worker():

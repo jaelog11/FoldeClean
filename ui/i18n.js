@@ -2,6 +2,7 @@
 'use strict';
 const I18N = {
 ko: {
+  "p4.confirm.filtered": "지금 목록에 보이는 '{path}' 범위의 {n}개 파일만 이동합니다.\n나머지는 그대로 둡니다. 모든 이동은 기록되어 되돌릴 수 있습니다.\n진행할까요?",
   'p4.root': '전체', 'p4.here': '(이 폴더)',
   'p4.flow.drill': '오른쪽 폴더를 누르면 한 단계 안으로 들어갑니다. › 표시가 있으면 하위 폴더가 더 있습니다. 위의 경로를 눌러 돌아올 수 있습니다.',
   'p4.tree.hint': '폴더 이름을 누르면 그 폴더에 들어갈 파일만 오른쪽 목록에 보입니다. 화살표는 접기·펼치기입니다.',
@@ -105,6 +106,7 @@ ko: {
   'demo.keep': '(그대로)', 'demo.orig': '(원본 유지)',
 },
 en: {
+  "p4.confirm.filtered": "Move only the {n} files currently listed under '{path}'.\nEverything else stays put. Every move is journaled and can be undone.\nProceed?",
   'p4.root': 'All', 'p4.here': '(this folder)',
   'p4.flow.drill': 'Click a folder on the right to go one level in. A › means it has subfolders. Use the path above to come back.',
   'p4.tree.hint': 'Click a folder name to show only the files going into it. The arrow collapses and expands.',
@@ -208,6 +210,7 @@ en: {
   'demo.keep': '(stays)', 'demo.orig': '(original kept)',
 },
 zh: {
+  "p4.confirm.filtered": "仅移动当前列表中 '{path}' 范围内的 {n} 个文件。\n其余保持不变。所有移动都会记录并可撤销。\n是否继续？",
   'p4.root': '全部', 'p4.here': '（此文件夹）',
   'p4.flow.drill': '点击右侧文件夹可进入下一层。带 › 表示还有子文件夹。点击上方路径可返回。',
   'p4.tree.hint': '点击文件夹名称，右侧只显示要放入该文件夹的文件。箭头用于折叠与展开。',
@@ -311,6 +314,7 @@ zh: {
   'demo.keep': '（保持）', 'demo.orig': '（保留原件）',
 },
 ja: {
+  "p4.confirm.filtered": "いま一覧に出ている '{path}' の範囲、{n} 件のファイルだけを移動します。\n他はそのままです。すべての移動は記録され元に戻せます。\n続けますか？",
   'p4.root': '全体', 'p4.here': '（このフォルダ）',
   'p4.flow.drill': '右のフォルダを押すと 1 階層下に入ります。› があればサブフォルダがあります。上の経路を押すと戻れます。',
   'p4.tree.hint': 'フォルダ名を押すと、そこへ入るファイルだけが右の一覧に表示されます。矢印は折りたたみ・展開です。',

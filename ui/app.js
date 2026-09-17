@@ -387,7 +387,7 @@ function renderFlow(d) {
 $('#animToggle').onchange = e => $('#flow').classList.toggle('noanim', !e.target.checked);
 
 const ROW = 44; let mvTotal = 0, mvQuery = '', mvCache = new Map();
-async function loadMoves(q) { mvQuery = q; mvCache.clear(); const r = await api.plan_moves(0, 200, q, state.destFilter || ''); mvTotal = r.total; r.items.forEach((m, i) => mvCache.set(i, m)); $('#moveCount').textContent = fmtNum(mvTotal); $('#vspacer').style.height = mvTotal * ROW + 'px'; $('#moveList').scrollTop = 0; drawRows(); }
+async function loadMoves(q) { mvQuery = q; mvCache.clear(); const r = await api.plan_moves(0, 200, q, state.destFilter || ''); mvTotal = r.total; r.items.forEach((m, i) => mvCache.set(i, m)); $('#moveCount').textContent = fmtNum(mvTotal); $('#vspacer').style.height = mvTotal * ROW + 'px'; $('#moveList').scrollTop = 0; updateExecButton(); drawRows(); }
 async function drawRows() {
   const box = $('#moveList'); const start = Math.floor(box.scrollTop / ROW); const end = Math.min(mvTotal, start + Math.ceil(box.clientHeight / ROW) + 4);
   if ([...Array(Math.max(0, end - start)).keys()].some(i => !mvCache.has(start + i))) { const r = await api.plan_moves(Math.max(0, start - 50), 300, mvQuery, state.destFilter || ''); r.items.forEach((m, i) => mvCache.set(Math.max(0, start - 50) + i, m)); }
@@ -411,10 +411,20 @@ $('#moveList').addEventListener('change', e => { const cb = e.target; if (cb.dat
 $('#btnExclude').onclick = async () => { if (!state.selected.size) return toast(t('p4.needsel')); busy(t('busy.exclude')); const n = await api.exclude_moves([...state.selected]); busy(null); state.selected.clear(); $('#selInfo').textContent = ''; toast(t('p4.excluded', { n })); loadMoves(mvQuery); };
 
 // ---------------------------------------------------------------- 5. 실행
+// 실행은 화면의 이동 목록에 보이는 것만 옮긴다. 버튼에 그 개수를 함께 보여준다.
+function updateExecButton() {
+  const b = $('#btnExec');
+  b.textContent = mvTotal ? `${t('p4.exec')} (${fmtNum(mvTotal)})` : t('p4.exec');
+  b.disabled = !mvTotal;
+}
 $('#btnExec').onclick = async () => {
   if (!state.plan || !mvTotal) return toast(t('p4.nomoves'));
-  if (!confirm(t('p4.confirm', { n: fmtNum(mvTotal) }))) return;
-  const r = await api.execute(true); if (r.error) return toast(r.error);
+  const scope = state.destFilter || mvQuery;
+  const msg = scope
+    ? t('p4.confirm.filtered', { n: fmtNum(mvTotal), path: state.destFilter || mvQuery })
+    : t('p4.confirm', { n: fmtNum(mvTotal) });
+  if (!confirm(msg)) return;
+  const r = await api.execute(true, state.destFilter || '', mvQuery || ''); if (r.error) return toast(r.error);
   state.execRoot = state.plan.root; go(5); $('#execTitle').textContent = t('p5.running'); $('#execSub').textContent = ''; $('#doneAnim').hidden = true; $('#btnCancel').disabled = false;
   watchExec(t('p5.exec'));
 };
