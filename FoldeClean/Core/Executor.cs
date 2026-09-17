@@ -10,6 +10,8 @@ public sealed class JournalEntry
     [JsonPropertyName("src")] public string Src { get; set; } = "";
     [JsonPropertyName("dst")] public string Dst { get; set; } = "";
     [JsonPropertyName("error")] public string? Error { get; set; }
+    /// <summary>계획을 세운 뒤 사용자가 직접 지워서 옮길 것이 없던 경우. 오류가 아니다.</summary>
+    [JsonPropertyName("missing")] public bool Missing { get; set; }
 }
 
 public sealed class Journal
@@ -18,6 +20,7 @@ public sealed class Journal
     [JsonPropertyName("root")] public string? Root { get; set; }
     [JsonPropertyName("entries")] public List<JournalEntry> Entries { get; set; } = new();
     [JsonPropertyName("failed")] public List<JournalEntry> Failed { get; set; } = new();
+    [JsonPropertyName("missing")] public List<JournalEntry> MissingFiles { get; set; } = new();
     [JsonPropertyName("removed_dirs")] public List<string> RemovedDirs { get; set; } = new();
     [JsonPropertyName("undone")] public string? Undone { get; set; }
     [JsonPropertyName("recovered")] public bool Recovered { get; set; }   // 강제 종료 후 .jsonl 로부터 복구됨
@@ -32,11 +35,11 @@ public sealed class Executor
 {
     readonly object _lock = new();
     public volatile bool CancelRequested;
-    bool _running, _finished; int _done, _total, _failed; string _current = ""; string? _journal;
+    bool _running, _finished; int _done, _total, _failed, _missing; string _current = ""; string? _journal;
 
     public Dictionary<string, object?> Snapshot()
     {
-        lock (_lock) return new() { ["running"] = _running, ["done"] = _done, ["total"] = _total, ["failed"] = _failed, ["current"] = _current, ["journal"] = _journal, ["finished"] = _finished };
+        lock (_lock) return new() { ["running"] = _running, ["done"] = _done, ["total"] = _total, ["failed"] = _failed, ["missing"] = _missing, ["current"] = _current, ["journal"] = _journal, ["finished"] = _finished };
     }
     public bool Running { get { lock (_lock) return _running; } }
 
@@ -114,7 +117,7 @@ public sealed class Executor
         var lpath = Path.Combine(Paths.Journals, stamp + ".jsonl");
         var j = new Journal { Created = stamp, Root = root };
         CancelRequested = false;
-        lock (_lock) { _running = true; _finished = false; _done = 0; _total = moves.Count; _failed = 0; _current = ""; _journal = jpath; }
+        lock (_lock) { _running = true; _finished = false; _done = 0; _total = moves.Count; _failed = 0; _missing = 0; _current = ""; _journal = jpath; }
 
         // 한 줄 기록: 첫 줄은 머리글, 이후 한 건마다 {"src","dst"} 또는 {"src","dst","error"}
         using (var log = new StreamWriter(new FileStream(lpath, FileMode.Create, FileAccess.Write, FileShare.Read), new UTF8Encoding(false)))
@@ -126,8 +129,19 @@ public sealed class Executor
                 if (CancelRequested) break;
                 var m = moves[i];
                 JournalEntry e;
-                try { Move(m.Src, m.Dst); e = new JournalEntry { Src = m.Src, Dst = m.Dst }; j.Entries.Add(e); }
-                catch (Exception ex) { e = new JournalEntry { Src = m.Src, Dst = m.Dst, Error = ex.Message }; j.Failed.Add(e); lock (_lock) _failed++; }
+                // 계획을 세운 뒤 사용자가 탐색기에서 지웠을 수 있다. 오류가 아니라 "이미 없음"으로 센다.
+                if (!File.Exists(m.Src))
+                {
+                    e = new JournalEntry { Src = m.Src, Dst = m.Dst, Missing = true };
+                    j.MissingFiles.Add(e);
+                    lock (_lock) _missing++;
+                }
+                else
+                {
+                    try { Move(m.Src, m.Dst); e = new JournalEntry { Src = m.Src, Dst = m.Dst }; j.Entries.Add(e); }
+                    catch (FileNotFoundException) { e = new JournalEntry { Src = m.Src, Dst = m.Dst, Missing = true }; j.MissingFiles.Add(e); lock (_lock) _missing++; }
+                    catch (Exception ex) { e = new JournalEntry { Src = m.Src, Dst = m.Dst, Error = ex.Message }; j.Failed.Add(e); lock (_lock) _failed++; }
+                }
                 log.WriteLine(JsonSerializer.Serialize(e, LineOpts));   // AutoFlush: 즉시 디스크로
                 lock (_lock) { _done = i + 1; _current = m.Name; }
             }
@@ -161,7 +175,9 @@ public sealed class Executor
                 JournalEntry? e;
                 try { e = JsonSerializer.Deserialize<JournalEntry>(line); } catch { continue; }   // 마지막 줄이 잘렸을 수 있음
                 if (e == null) continue;
-                if (e.Error == null) j.Entries.Add(e); else j.Failed.Add(e);
+                if (e.Missing) j.MissingFiles.Add(e);
+                else if (e.Error == null) j.Entries.Add(e);
+                else j.Failed.Add(e);
             }
             WriteJson(Path.ChangeExtension(lpath, ".json"), j);
             return j;
@@ -211,7 +227,7 @@ public sealed class Executor
             {
                 var j = JsonSerializer.Deserialize<Journal>(File.ReadAllText(p));
                 if (j == null) continue;
-                list.Add(new() { ["path"] = p, ["created"] = j.Created, ["root"] = j.Root, ["count"] = j.Entries.Count, ["failed"] = j.Failed.Count, ["undone"] = j.Undone, ["recovered"] = j.Recovered });
+                list.Add(new() { ["path"] = p, ["created"] = j.Created, ["root"] = j.Root, ["count"] = j.Entries.Count, ["failed"] = j.Failed.Count, ["missing"] = j.MissingFiles.Count, ["undone"] = j.Undone, ["recovered"] = j.Recovered });
             }
             catch { }
         }

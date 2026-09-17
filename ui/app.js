@@ -102,9 +102,11 @@ async function runScan(depth) {
   const root = $('#rootInput').value.trim();
   if (!root) return toast(t('toast.needpath'));
   if (depth !== undefined) $('#optDepth').value = String(depth);
-  state.root = root; busy(t('busy.folder'));
+  state.root = root;
+  state.scanArgs = { root, locks: $('#optLocks').checked, depth: +$('#optDepth').value };   // 다시 검사할 때 쓴다
+  busy(t('busy.folder'));
   const poll = watchProgress(t('busy.folder'));
-  const res = await api.scan_folder(root, $('#optLocks').checked, +$('#optDepth').value);
+  const res = await api.scan_folder(root, state.scanArgs.locks, state.scanArgs.depth);
   clearInterval(poll); busy(null);
   if (res.error) return toast(res.error);
   state.scan = res; renderScan(res); go(2);
@@ -274,6 +276,7 @@ function runDemo(id) {
 $('#btnPlan').onclick = async () => {
   busy(t('busy.planning'));
   const poll = watchProgress(t('busy.planning'));
+  state.planArgs = { strategy: state.strategy, opts: collectOpts(), includeWarn: state.includeWarn };   // 다시 검사할 때 쓴다
   const res = await api.build_plan(state.strategy, collectOpts(), state.includeWarn, null, [], 0);
   clearInterval(poll); busy(null); if (res.error) return toast(res.error);
   // 옮길 파일이 없으면 빈 미리보기로 넘기지 않고, 왜 없는지 그 자리에서 알려 준다
@@ -411,6 +414,27 @@ $('#moveList').addEventListener('change', e => { const cb = e.target; if (cb.dat
 $('#btnExclude').onclick = async () => { if (!state.selected.size) return toast(t('p4.needsel')); busy(t('busy.exclude')); const n = await api.exclude_moves([...state.selected]); busy(null); state.selected.clear(); $('#selInfo').textContent = ''; toast(t('p4.excluded', { n })); loadMoves(mvQuery); };
 
 // ---------------------------------------------------------------- 5. 실행
+// 미리보기를 만든 뒤 탐색기에서 파일을 지우거나 옮겼을 수 있다. 같은 조건으로 다시 검사해 목록을 맞춘다.
+async function refreshPlan() {
+  if (!state.scanArgs || !state.planArgs) return toast(t('p4.refresh.need'));
+  const keep = state.destFilter;
+  busy(t('busy.refresh'));
+  const poll = watchProgress(t('busy.refresh'));
+  const sc = await api.scan_folder(state.scanArgs.root, state.scanArgs.locks, state.scanArgs.depth);
+  if (sc.error) { clearInterval(poll); busy(null); return toast(sc.error); }
+  state.scan = sc; renderScan(sc);
+  const pl = await api.build_plan(state.planArgs.strategy, state.planArgs.opts, state.planArgs.includeWarn, null, [], 0);
+  clearInterval(poll); busy(null);
+  if (pl.error) return toast(pl.error);
+  if (!pl.summary.move_count) { go(3); showEmptyPlan(pl); return; }
+  state.plan = pl; state.selected.clear();
+  renderPlan(pl);
+  if (keep) setDestFilter(keep);        // 보던 범위를 유지한다 (없어졌으면 0건으로 보인다)
+  go(4);
+  toast(t('p4.refreshed', { n: fmtNum(pl.summary.move_count) }));   // 목록 갱신은 비동기라 계획 값을 쓴다
+}
+$('#btnRefreshPlan').onclick = refreshPlan;
+
 // 실행은 화면의 이동 목록에 보이는 것만 옮긴다. 버튼에 그 개수를 함께 보여준다.
 function updateExecButton() {
   const b = $('#btnExec');
@@ -432,8 +456,19 @@ function watchExec(label) {
   const timer = setInterval(async () => {
     const p = await api.get_progress(); const e = p.exec;
     const pct = e.total ? e.done / e.total * 100 : 0; $('#execBar').style.width = pct + '%';
-    $('#execText').textContent = `${fmtNum(e.done)} / ${fmtNum(e.total)} · ${e.current || ''}${e.failed ? ` · ${t('p5.failed')} ${e.failed}` : ''}`;
-    if (e.finished && !e.running) { clearInterval(timer); $('#execTitle').textContent = t('p5.done', { label }); $('#execSub').textContent = e.failed ? t('p5.fail', { n: e.failed }) : t('p5.ok'); $('#doneAnim').hidden = false; $('#btnCancel').disabled = true; state.lastJournal = e.journal; }
+    const extra = (e.failed ? ` · ${t('p5.failed')} ${e.failed}` : '') + (e.missing ? ` · ${t('p5.skipped.short')} ${e.missing}` : '');
+    $('#execText').textContent = `${fmtNum(e.done)} / ${fmtNum(e.total)} · ${e.current || ''}${extra}`;
+    if (e.finished && !e.running) {
+      clearInterval(timer);
+      $('#execTitle').textContent = t('p5.done', { label });
+      // 실패(옮기지 못함)와 이미 없음(사용자가 지움)을 구분해서 알려 준다
+      const parts = [];
+      if (e.failed) parts.push(t('p5.fail', { n: fmtNum(e.failed) }));
+      if (e.missing) parts.push(t('p5.skipped', { n: fmtNum(e.missing) }));
+      if (!parts.length) parts.push(t('p5.ok'));
+      $('#execSub').textContent = parts.join(' ');
+      $('#doneAnim').hidden = false; $('#btnCancel').disabled = true; state.lastJournal = e.journal;
+    }
   }, 250);
 }
 $('#btnCancel').onclick = () => api.cancel();

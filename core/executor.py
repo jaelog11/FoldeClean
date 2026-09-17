@@ -23,7 +23,7 @@ class Executor:
     def __init__(self):
         self.cancel = threading.Event()
         self.lock = threading.Lock()
-        self.state = {"running": False, "done": 0, "total": 0, "failed": 0, "current": "", "journal": None, "finished": False}
+        self.state = {"running": False, "done": 0, "total": 0, "failed": 0, "missing": 0, "current": "", "journal": None, "finished": False}
 
     def snapshot(self) -> dict:
         with self.lock:
@@ -33,21 +33,31 @@ class Executor:
         os.makedirs(JOURNAL_DIR, exist_ok=True)
         stamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
         jpath = os.path.join(JOURNAL_DIR, f"{stamp}.json")
-        journal = {"created": stamp, "root": root, "entries": [], "failed": []}
+        journal = {"created": stamp, "root": root, "entries": [], "failed": [], "missing": []}
         self.cancel.clear()
         with self.lock:
-            self.state.update(running=True, done=0, total=len(moves), failed=0, current="", journal=jpath, finished=False)
+            self.state.update(running=True, done=0, total=len(moves), failed=0, missing=0, current="", journal=jpath, finished=False)
         last_flush = time.perf_counter()
         for i, m in enumerate(moves):
             if self.cancel.is_set():
                 break
-            try:
-                _move(m["src"], m["dst"])
-                journal["entries"].append({"src": m["src"], "dst": m["dst"]})
-            except Exception as e:  # noqa: BLE001
-                journal["failed"].append({"src": m["src"], "dst": m["dst"], "error": str(e)})
+            # 계획을 세운 뒤 사용자가 직접 지웠을 수 있다. 오류가 아니라 "이미 없음"으로 센다.
+            if not os.path.exists(m["src"]):
+                journal["missing"].append({"src": m["src"], "dst": m["dst"], "missing": True})
                 with self.lock:
-                    self.state["failed"] += 1
+                    self.state["missing"] = self.state.get("missing", 0) + 1
+            else:
+                try:
+                    _move(m["src"], m["dst"])
+                    journal["entries"].append({"src": m["src"], "dst": m["dst"]})
+                except FileNotFoundError:
+                    journal["missing"].append({"src": m["src"], "dst": m["dst"], "missing": True})
+                    with self.lock:
+                        self.state["missing"] = self.state.get("missing", 0) + 1
+                except Exception as e:  # noqa: BLE001
+                    journal["failed"].append({"src": m["src"], "dst": m["dst"], "error": str(e)})
+                    with self.lock:
+                        self.state["failed"] += 1
             with self.lock:
                 self.state["done"] = i + 1
                 self.state["current"] = m["name"]
@@ -153,7 +163,7 @@ def list_journals() -> list[dict]:
             with open(p, encoding="utf-8") as f:
                 j = json.load(f)
             out.append({"path": p, "created": j.get("created"), "root": j.get("root"),
-                        "count": len(j.get("entries", [])), "failed": len(j.get("failed", [])),
+                        "count": len(j.get("entries", [])), "failed": len(j.get("failed", [])), "missing": len(j.get("missing", [])),
                         "undone": j.get("undone")})
         except Exception:  # noqa: BLE001
             continue

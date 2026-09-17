@@ -37,7 +37,7 @@ public partial class App : Application
             root = Path.GetFullPath(root);
             var sw = System.Diagnostics.Stopwatch.StartNew();
             var scan = Scanner.Scan(root);
-            var before = scan.Files.Select(f => f.Path).OrderBy(p => p, StringComparer.Ordinal).ToList();
+            var before = scan.Files.Select(f => f.Path).OrderBy(p => p, StringComparer.Ordinal).ToList();   // 아래에서 다시 잡는다
             var tScan = sw.Elapsed.TotalSeconds; sw.Restart();
             var analyzer = new SafetyAnalyzer(root, checkLocks: true);
             var tPrepare = sw.Elapsed.TotalSeconds; sw.Restart();
@@ -98,9 +98,16 @@ public partial class App : Application
             foreach (var b in bystander) Directory.CreateDirectory(b);
 
             var plan = Planner.Build(scan.Files, root, Strategies.Make("type_date", new()), false, new(), 0);
+
+            // 계획을 세운 뒤 사용자가 파일 하나를 직접 지운 상황: 오류가 아니라 "이미 없음"으로 세어야 한다
+            var vanished = plan.Moves[plan.Moves.Count / 2].Src;
+            try { File.Delete(vanished); } catch { }
+            before = Scanner.Scan(root).Files.Select(f => f.Path).OrderBy(p => p, StringComparer.Ordinal).ToList();
+
             var ex = new Executor();
             var jpath = ex.Run(plan.Moves, true, root);
             log["executed"] = ex.Snapshot();
+            log["missing_counted"] = ex.Snapshot()["missing"];
             log["bystander_dirs_kept"] = bystander.Count(Directory.Exists);
             log["bystander_dirs_total"] = bystander.Length;
             // 한 줄 기록(.jsonl)만으로 복구되는지도 확인

@@ -2,6 +2,10 @@
 'use strict';
 const I18N = {
 ko: {
+  'p4.refresh': '다시 검사', 'p4.refresh.s': '미리보기를 만든 뒤 탐색기에서 파일을 지우거나 옮겼다면 눌러서 목록을 맞추세요.',
+  'p4.refresh.need': '먼저 폴더를 검사하고 미리보기를 만드세요.', 'p4.refreshed': '다시 검사했습니다. 이동 대상 {n}개',
+  'busy.refresh': '다시 검사하는 중…',
+  'p5.skipped': '{n}개는 이미 없어서 건너뛰었습니다. 검사한 뒤에 지워지거나 옮겨진 파일입니다.', 'p5.skipped.short': '이미 없음',
   "p4.confirm.filtered": "지금 목록에 보이는 '{path}' 범위의 {n}개 파일만 이동합니다.\n나머지는 그대로 둡니다. 모든 이동은 기록되어 되돌릴 수 있습니다.\n진행할까요?",
   'p4.root': '전체', 'p4.here': '(이 폴더)',
   'p4.flow.drill': '오른쪽 폴더를 누르면 한 단계 안으로 들어갑니다. › 표시가 있으면 하위 폴더가 더 있습니다. 위의 경로를 눌러 돌아올 수 있습니다.',
@@ -106,6 +110,10 @@ ko: {
   'demo.keep': '(그대로)', 'demo.orig': '(원본 유지)',
 },
 en: {
+  'p4.refresh': 'Rescan', 'p4.refresh.s': 'If you deleted or moved files in Explorer after building this preview, press this to bring the list up to date.',
+  'p4.refresh.need': 'Scan a folder and build a preview first.', 'p4.refreshed': 'Rescanned. {n} files to move.',
+  'busy.refresh': 'Rescanning…',
+  'p5.skipped': '{n} files were skipped because they were already gone, deleted or moved after the scan.', 'p5.skipped.short': 'already gone',
   "p4.confirm.filtered": "Move only the {n} files currently listed under '{path}'.\nEverything else stays put. Every move is journaled and can be undone.\nProceed?",
   'p4.root': 'All', 'p4.here': '(this folder)',
   'p4.flow.drill': 'Click a folder on the right to go one level in. A › means it has subfolders. Use the path above to come back.',
@@ -210,6 +218,10 @@ en: {
   'demo.keep': '(stays)', 'demo.orig': '(original kept)',
 },
 zh: {
+  'p4.refresh': '重新检查', 'p4.refresh.s': '如果生成预览后在资源管理器中删除或移动了文件，请点击以更新列表。',
+  'p4.refresh.need': '请先检查文件夹并生成预览。', 'p4.refreshed': '已重新检查，待移动 {n} 个。',
+  'busy.refresh': '正在重新检查…',
+  'p5.skipped': '{n} 个文件已不存在，已跳过。它们在检查之后被删除或移动了。', 'p5.skipped.short': '已不存在',
   "p4.confirm.filtered": "仅移动当前列表中 '{path}' 范围内的 {n} 个文件。\n其余保持不变。所有移动都会记录并可撤销。\n是否继续？",
   'p4.root': '全部', 'p4.here': '（此文件夹）',
   'p4.flow.drill': '点击右侧文件夹可进入下一层。带 › 表示还有子文件夹。点击上方路径可返回。',
@@ -314,6 +326,10 @@ zh: {
   'demo.keep': '（保持）', 'demo.orig': '（保留原件）',
 },
 ja: {
+  'p4.refresh': '再検査', 'p4.refresh.s': 'プレビュー作成後にエクスプローラーでファイルを削除・移動した場合は、押して一覧を合わせてください。',
+  'p4.refresh.need': '先にフォルダを検査してプレビューを作成してください。', 'p4.refreshed': '再検査しました。移動対象 {n} 件。',
+  'busy.refresh': '再検査中…',
+  'p5.skipped': '{n} 件はすでに存在せず、スキップしました。検査のあとに削除・移動されたファイルです。', 'p5.skipped.short': 'すでにない',
   "p4.confirm.filtered": "いま一覧に出ている '{path}' の範囲、{n} 件のファイルだけを移動します。\n他はそのままです。すべての移動は記録され元に戻せます。\n続けますか？",
   'p4.root': '全体', 'p4.here': '（このフォルダ）',
   'p4.flow.drill': '右のフォルダを押すと 1 階層下に入ります。› があればサブフォルダがあります。上の経路を押すと戻れます。',
