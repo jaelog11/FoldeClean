@@ -56,15 +56,19 @@ public static class Categories
         .GroupBy(t => t.e).ToDictionary(g => g.Key, g => (g.First().key, g.First().label));   // 같은 확장자는 먼저 나온 분류 우선
     public static readonly string[] JohnnyOrder = { "documents", "images", "videos", "audio", "archives", "installers", "code", "fonts", "other" };
 
+    /// <summary>
+    /// 파일이 속한 최상위 개념과 그 이름. 분류는 이제 ontology.json 이 정한다.
+    /// 폴더 이름에는 최상위 개념만 쓴다 (세부 개념은 규칙·검색 전용).
+    /// </summary>
     public static (string key, string label) Of(FileRec f)
     {
-        var key = ExtMap.TryGetValue(f.Ext, out var c) ? c.key : "other";
-        return (key, I18n.Name(key));
+        var key = Ontology.TopIdOf(f.Ext);
+        return (key, Ontology.Label(key));
     }
 
     public static List<Dictionary<string, object?>> Breakdown(List<FileRec> files) =>
         files.GroupBy(f => Of(f).key)
-             .Select(g => new Dictionary<string, object?> { ["key"] = g.Key, ["label"] = I18n.Name(g.Key), ["count"] = g.Count(), ["size"] = g.Sum(x => x.Size) })
+             .Select(g => new Dictionary<string, object?> { ["key"] = g.Key, ["label"] = Ontology.Label(g.Key), ["count"] = g.Count(), ["size"] = g.Sum(x => x.Size) })
              .OrderByDescending(d => (long)d["size"]!).ToList();
 }
 
@@ -109,7 +113,7 @@ public sealed class Johnny : Strategy
     public override string? DestDir(FileRec f, string root)
     {
         var (key, label) = Categories.Of(f);
-        if (!Categories.JohnnyOrder.Contains(key)) { key = "other"; label = I18n.Name("other"); }
+        if (!Categories.JohnnyOrder.Contains(key)) { key = "other"; label = Ontology.Label("other"); }
         int idx = Array.IndexOf(Categories.JohnnyOrder, key) + 1;
         return Path.Combine($"{idx}0-{idx}9 {label}", $"{idx}1 {label}", Sub(f, root));
     }

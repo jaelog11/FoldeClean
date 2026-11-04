@@ -1,0 +1,140 @@
+{
+  "version": 1,
+  "note": "FoldeClean 분류 체계. 코드가 아니라 이 파일이 분류를 정한다. 사용자는 %LOCALAPPDATA%\\FoldeClean\\ontology.json 으로 덮어쓰거나 개념을 더할 수 있다.",
+  "rules": {
+    "top_level_only_for_folders": "정리 폴더 이름에는 최상위 개념만 쓴다. 세부 개념은 내 규칙과 검색에서 쓴다. 이렇게 해야 기존 정리 결과가 바뀌지 않는다.",
+    "ext": "이 개념이 가져가는 확장자. 최상위 개념에만 둔다.",
+    "name_patterns": "파일 이름에 이 말이 들어가면 이 세부 개념으로 본다. 대소문자 구분 없음.",
+    "synonyms": "검색할 때 함께 찾을 말. 언어별로 둔다."
+  },
+  "concepts": [
+    {
+      "id": "documents", "parent": null,
+      "labels": { "ko": "문서", "en": "Documents", "zh": "文档", "ja": "書類" },
+      "ext": ["doc","docx","hwp","hwpx","pdf","txt","rtf","odt","md","ppt","pptx","xls","xlsx","csv","odp","ods","pages","key","numbers","epub"],
+      "synonyms": { "ko": ["문서","서류","자료"], "en": ["document","doc","paper"], "zh": ["文档","资料"], "ja": ["書類","文書","資料"] }
+    },
+    { "id": "contracts", "parent": "documents",
+      "labels": { "ko": "계약서", "en": "Contracts", "zh": "合同", "ja": "契約書" },
+      "name_patterns": ["계약","contract","agreement","契約","合同","mou","nda"],
+      "synonyms": { "ko": ["계약","계약서","약정"], "en": ["contract","agreement"], "zh": ["合同","协议"], "ja": ["契約","契約書"] } },
+    { "id": "receipts", "parent": "documents",
+      "labels": { "ko": "영수증·청구", "en": "Receipts", "zh": "收据", "ja": "領収書" },
+      "name_patterns": ["영수증","청구","세금계산서","receipt","invoice","billing","領収","請求","发票","收据"],
+      "synonyms": { "ko": ["영수증","청구서","계산서","세금"], "en": ["receipt","invoice","bill"], "zh": ["收据","发票","账单"], "ja": ["領収書","請求書"] } },
+    { "id": "reports", "parent": "documents",
+      "labels": { "ko": "보고서", "en": "Reports", "zh": "报告", "ja": "報告書" },
+      "name_patterns": ["보고서","리포트","report","report_","報告","报告"],
+      "synonyms": { "ko": ["보고서","리포트","보고"], "en": ["report"], "zh": ["报告"], "ja": ["報告","報告書"] } },
+    { "id": "minutes", "parent": "documents",
+      "labels": { "ko": "회의록", "en": "Minutes", "zh": "会议记录", "ja": "議事録" },
+      "name_patterns": ["회의록","회의","minutes","meeting","議事","会议"],
+      "synonyms": { "ko": ["회의","회의록"], "en": ["meeting","minutes"], "zh": ["会议","记录"], "ja": ["会議","議事録"] } },
+    { "id": "resumes", "parent": "documents",
+      "labels": { "ko": "이력서", "en": "Resumes", "zh": "简历", "ja": "履歴書" },
+      "name_patterns": ["이력서","자소서","resume","curriculum vitae","履歴","简历"],
+      "synonyms": { "ko": ["이력서","자기소개서"], "en": ["resume","cv"], "zh": ["简历"], "ja": ["履歴書"] } },
+    { "id": "manuals", "parent": "documents",
+      "labels": { "ko": "설명서", "en": "Manuals", "zh": "说明书", "ja": "説明書" },
+      "name_patterns": ["매뉴얼","설명서","사용법","manual","guide","handbook","取扱","说明书"],
+      "synonyms": { "ko": ["매뉴얼","설명서","안내"], "en": ["manual","guide"], "zh": ["说明","指南"], "ja": ["説明書","手引"] } },
+    { "id": "certificates", "parent": "documents",
+      "labels": { "ko": "증명서", "en": "Certificates", "zh": "证明", "ja": "証明書" },
+      "name_patterns": ["증명서","등본","초본","certificate","證明","证明"],
+      "synonyms": { "ko": ["증명서","등본","확인서"], "en": ["certificate"], "zh": ["证明"], "ja": ["証明書"] } },
+
+    {
+      "id": "images", "parent": null,
+      "labels": { "ko": "이미지", "en": "Images", "zh": "图片", "ja": "画像" },
+      "ext": ["jpg","jpeg","png","gif","bmp","webp","heic","heif","tif","tiff","svg","raw","cr2","nef","arw","psd","ai"],
+      "synonyms": { "ko": ["이미지","그림","사진"], "en": ["image","picture","photo"], "zh": ["图片","图像"], "ja": ["画像","写真"] }
+    },
+    { "id": "screenshots", "parent": "images",
+      "labels": { "ko": "스크린샷", "en": "Screenshots", "zh": "截图", "ja": "スクリーンショット" },
+      "name_patterns": ["스크린샷","캡처","화면","screenshot","screen shot","capture","스샷","截图","スクリーンショット"],
+      "synonyms": { "ko": ["스크린샷","캡처","화면"], "en": ["screenshot","capture"], "zh": ["截图"], "ja": ["スクショ","画面"] } },
+    { "id": "photos", "parent": "images",
+      "labels": { "ko": "사진", "en": "Photos", "zh": "照片", "ja": "写真" },
+      "name_patterns": ["사진","img_","dsc","dscf","p10","pxl_","photo","写真","照片"],
+      "synonyms": { "ko": ["사진"], "en": ["photo","picture"], "zh": ["照片"], "ja": ["写真"] } },
+    { "id": "scans", "parent": "images",
+      "labels": { "ko": "스캔본", "en": "Scans", "zh": "扫描件", "ja": "スキャン" },
+      "name_patterns": ["스캔","scan","扫描","スキャン"],
+      "synonyms": { "ko": ["스캔","스캔본"], "en": ["scan","scanned"], "zh": ["扫描"], "ja": ["スキャン"] } },
+    { "id": "designs", "parent": "images",
+      "labels": { "ko": "디자인 원본", "en": "Design files", "zh": "设计稿", "ja": "デザイン原本" },
+      "ext_hint": ["psd","ai","sketch","fig","xd"],
+      "name_patterns": ["디자인","시안","design","mockup","wireframe"],
+      "synonyms": { "ko": ["디자인","시안"], "en": ["design","mockup"], "zh": ["设计","稿"], "ja": ["デザイン"] } },
+
+    {
+      "id": "videos", "parent": null,
+      "labels": { "ko": "동영상", "en": "Videos", "zh": "视频", "ja": "動画" },
+      "ext": ["mp4","mkv","avi","mov","wmv","flv","webm","m4v","mpg","mpeg","ts","3gp"],
+      "synonyms": { "ko": ["동영상","영상","비디오"], "en": ["video","movie","clip"], "zh": ["视频","影片"], "ja": ["動画","ビデオ"] }
+    },
+    { "id": "recordings", "parent": "videos",
+      "labels": { "ko": "녹화본", "en": "Recordings", "zh": "录屏", "ja": "録画" },
+      "name_patterns": ["녹화","녹음","recording","screen record","录屏","録画"],
+      "synonyms": { "ko": ["녹화","녹화본"], "en": ["recording","record"], "zh": ["录屏","录制"], "ja": ["録画"] } },
+
+    {
+      "id": "audio", "parent": null,
+      "labels": { "ko": "음악", "en": "Music", "zh": "音乐", "ja": "音楽" },
+      "ext": ["mp3","wav","flac","aac","m4a","ogg","wma","opus","mid","midi"],
+      "synonyms": { "ko": ["음악","소리","오디오"], "en": ["music","audio","sound"], "zh": ["音乐","音频"], "ja": ["音楽","音声"] }
+    },
+    {
+      "id": "archives", "parent": null,
+      "labels": { "ko": "압축", "en": "Archives", "zh": "压缩包", "ja": "圧縮" },
+      "ext": ["zip","rar","7z","tar","gz","bz2","xz","iso","cab","alz","egg"],
+      "synonyms": { "ko": ["압축","압축파일"], "en": ["archive","zip","compressed"], "zh": ["压缩","压缩包"], "ja": ["圧縮","アーカイブ"] }
+    },
+    { "id": "backups", "parent": "archives",
+      "labels": { "ko": "백업", "en": "Backups", "zh": "备份", "ja": "バックアップ" },
+      "name_patterns": ["백업","backup","bak","备份","バックアップ"],
+      "synonyms": { "ko": ["백업"], "en": ["backup"], "zh": ["备份"], "ja": ["バックアップ"] } },
+
+    {
+      "id": "installers", "parent": null,
+      "labels": { "ko": "설치파일", "en": "Installers", "zh": "安装程序", "ja": "インストーラー" },
+      "ext": ["exe","msi","msix","appx","apk","dmg","pkg","deb","rpm"],
+      "synonyms": { "ko": ["설치","설치파일","프로그램"], "en": ["installer","setup","install"], "zh": ["安装","安装包"], "ja": ["インストーラー","セットアップ"] }
+    },
+    {
+      "id": "code", "parent": null,
+      "labels": { "ko": "코드", "en": "Code", "zh": "代码", "ja": "コード" },
+      "ext": ["py","js","ts","tsx","jsx","html","css","scss","json","xml","yaml","yml","toml","ini","cfg","c","cpp","h","hpp","cs","java","kt","go","rs","rb","php","sh","bat","ps1","sql","ipynb"],
+      "synonyms": { "ko": ["코드","소스","프로그램"], "en": ["code","source","script"], "zh": ["代码","源码"], "ja": ["コード","ソース"] }
+    },
+    { "id": "configs", "parent": "code",
+      "labels": { "ko": "설정 파일", "en": "Config files", "zh": "配置文件", "ja": "設定ファイル" },
+      "ext_hint": ["json","yaml","yml","toml","ini","cfg"],
+      "name_patterns": ["config","설정","settings","conf","配置","設定"],
+      "synonyms": { "ko": ["설정","환경설정"], "en": ["config","settings"], "zh": ["配置"], "ja": ["設定"] } },
+    { "id": "notebooks", "parent": "code",
+      "labels": { "ko": "노트북", "en": "Notebooks", "zh": "笔记本", "ja": "ノートブック" },
+      "ext_hint": ["ipynb"],
+      "name_patterns": ["notebook","노트북"],
+      "synonyms": { "ko": ["노트북","주피터"], "en": ["notebook","jupyter"], "zh": ["笔记本"], "ja": ["ノートブック"] } },
+
+    {
+      "id": "fonts", "parent": null,
+      "labels": { "ko": "폰트", "en": "Fonts", "zh": "字体", "ja": "フォント" },
+      "ext": ["ttf","otf","woff","woff2","eot"],
+      "synonyms": { "ko": ["폰트","글꼴","서체"], "en": ["font","typeface"], "zh": ["字体"], "ja": ["フォント","書体"] }
+    },
+    {
+      "id": "shortcuts", "parent": null,
+      "labels": { "ko": "바로가기", "en": "Shortcuts", "zh": "快捷方式", "ja": "ショートカット" },
+      "ext": ["lnk","url"],
+      "synonyms": { "ko": ["바로가기","링크"], "en": ["shortcut","link"], "zh": ["快捷方式"], "ja": ["ショートカット"] }
+    },
+    {
+      "id": "other", "parent": null,
+      "labels": { "ko": "기타", "en": "Other", "zh": "其他", "ja": "その他" },
+      "ext": [],
+      "synonyms": { "ko": ["기타"], "en": ["other","misc"], "zh": ["其他"], "ja": ["その他"] }
+    }
+  ]
+}

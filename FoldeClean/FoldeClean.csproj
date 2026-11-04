@@ -9,9 +9,9 @@
     <AssemblyName>FoldeClean</AssemblyName>
     <RootNamespace>FoldeClean</RootNamespace>
     <!-- 버전은 여기 한 곳만 바꾸면 exe 속성·창 제목·화면에 모두 반영된다 -->
-    <Version>0.2</Version>
-    <AssemblyVersion>0.2.0.0</AssemblyVersion>
-    <FileVersion>0.2.0.0</FileVersion>
+    <Version>0.3</Version>
+    <AssemblyVersion>0.3.0.0</AssemblyVersion>
+    <FileVersion>0.3.0.0</FileVersion>
     <Product>FoldeClean</Product>
     <Company>Jaelog By 아지랑이</Company>
     <Authors>Jaelog By 아지랑이</Authors>
@@ -46,6 +46,7 @@
     <EmbeddedResource Include="..\ui\app.css" LogicalName="ui/app.css" />
     <EmbeddedResource Include="..\ui\app.js" LogicalName="ui/app.js" />
     <EmbeddedResource Include="..\ui\i18n.js" LogicalName="ui/i18n.js" />
+    <EmbeddedResource Include="..\ontology.json" LogicalName="ontology.json" />
   </ItemGroup>
 
 </Project>

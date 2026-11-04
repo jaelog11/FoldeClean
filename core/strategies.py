@@ -17,6 +17,7 @@ from collections import defaultdict
 
 from .scanner import FileInfo
 from . import i18n
+from . import ontology as onto
 
 CATEGORIES: dict[str, tuple[str, set[str]]] = {
     "documents": ("문서", {"doc", "docx", "hwp", "hwpx", "pdf", "txt", "rtf", "odt", "md", "ppt", "pptx", "xls", "xlsx", "csv", "odp", "ods", "pages", "key", "numbers", "epub"}),
@@ -36,8 +37,9 @@ JOHNNY_ORDER = ["documents", "images", "videos", "audio", "archives", "installer
 
 
 def category_of(f: FileInfo) -> tuple[str, str]:
-    key = _EXT_TO_CAT.get(f.ext, "other")
-    return key, i18n.name(key)
+    """최상위 개념과 그 이름. 분류는 ontology.json 이 정한다."""
+    key = onto.top_id_of(f.ext)
+    return key, onto.label(key)
 
 
 def _ym(ts: float, fmt: str) -> str:
@@ -133,7 +135,7 @@ class Johnny(Strategy):
     def dest_dir(self, f, root):
         key, label = category_of(f)
         if key not in JOHNNY_ORDER:
-            key, label = "other", i18n.name("other")
+            key, label = "other", onto.label("other")
         idx = JOHNNY_ORDER.index(key) + 1  # 1..9
         area = f"{idx}0-{idx}9 {label}"
         cat = f"{idx}1 {label}"
@@ -193,4 +195,4 @@ def category_breakdown(files: list[FileInfo]) -> list[dict]:
         key, _label = category_of(f)
         agg[key]["count"] += 1
         agg[key]["size"] += f.size
-    return [{"key": k, "label": i18n.name(k), **v} for k, v in sorted(agg.items(), key=lambda kv: -kv[1]["size"])]
+    return [{"key": k, "label": onto.label(k), **v} for k, v in sorted(agg.items(), key=lambda kv: -kv[1]["size"])]

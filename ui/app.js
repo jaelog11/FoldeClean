@@ -495,6 +495,9 @@ async function initEdition() {
   $('#proRow').classList.toggle('locked', !edition.pro_active);
   await refreshRulesSummary();
 }
+async function initConcepts() {
+  try { state.concepts = await api.ontology_concepts(); } catch (e) { state.concepts = []; }
+}
 async function refreshRulesSummary() {
   try {
     const r = await api.rules_get();
@@ -525,11 +528,12 @@ $('#btnTrial').onclick = async () => {
 };
 
 // ---------------------------------------------------------------- 내 규칙 (Pro)
-const FIELDS = ['name', 'ext', 'size', 'age', 'dir', 'path'];
+const FIELDS = ['concept', 'name', 'ext', 'size', 'age', 'dir', 'path'];
 const OPS_TEXT = ['contains', 'not_contains', 'equals', 'starts', 'ends', 'regex'];
 const OPS_NUM = ['gt', 'lt', 'equals'];
+const OPS_CONCEPT = ['is', 'is_not'];
 const ACTIONS = ['folder', 'skip', 'prefix', 'suffix'];
-const opsFor = f => (f === 'size' || f === 'age') ? OPS_NUM : OPS_TEXT;
+const opsFor = f => f === 'concept' ? OPS_CONCEPT : (f === 'size' || f === 'age') ? OPS_NUM : OPS_TEXT;
 const rulesState = { list: [], sel: -1 };
 const normRule = r => ({ id: r.id || '', enabled: r.enabled !== false, name: r.name || '', conditions: (r.conditions || []).map(c => ({ field: c.field || 'name', op: c.op || 'contains', value: c.value || '' })), action: r.action || 'folder', value: r.value || '' });
 
@@ -561,10 +565,13 @@ function renderRuleEdit() {
   const r = rulesState.list[rulesState.sel];
   if (!r) { box.innerHTML = `<div class="muted small">${t('rules.pick')}</div>`; return; }
   const sel = (opts, cur, attr, tag) => `<select class="input" ${attr}>${opts.map(o => `<option value="${o}" ${o === cur ? 'selected' : ''}>${esc(t(tag + '.' + o))}</option>`).join('')}</select>`;
+  // 개념 조건은 값 칸이 목록으로 바뀐다. 확장자를 일일이 적지 않아도 된다.
+  const conceptSelect = (i, cur) => `<select class="input" data-cv="${i}">${(state.concepts || []).map(o =>
+    `<option value="${esc(o.id)}" ${o.id === cur ? 'selected' : ''}>${o.top ? '' : '— '}${esc(o.label)}</option>`).join('')}</select>`;
   const conds = r.conditions.map((c, i) => `<div class="cond">
       ${sel(FIELDS, c.field, `data-cf="${i}"`, 'field')}
       ${sel(opsFor(c.field), c.op, `data-co="${i}"`, 'op')}
-      <input class="input" data-cv="${i}" value="${esc(c.value)}">
+      ${c.field === 'concept' ? conceptSelect(i, c.value) : `<input class="input" data-cv="${i}" value="${esc(c.value)}">`}
       <button class="icobtn" data-cd="${i}">✕</button>
     </div>`).join('');
   box.innerHTML = `
@@ -575,9 +582,17 @@ function renderRuleEdit() {
     <div class="row"><button class="ghost small" id="rTest">${t('rules.test')}</button><button class="icobtn" id="rDel">${t('rules.delete')}</button></div>
     <div class="testbox" id="rTestBox" hidden></div>`;
   $('#rName').oninput = e => { r.name = e.target.value; const it = $(`.rule-item[data-i="${rulesState.sel}"] .rn`); if (it) it.textContent = r.name || t('rules.newname'); };
-  $$('#ruleEdit [data-cf]').forEach(s2 => s2.onchange = () => { const i = +s2.dataset.cf; r.conditions[i].field = s2.value; r.conditions[i].op = opsFor(s2.value)[0]; renderRuleEdit(); });
+  $$('#ruleEdit [data-cf]').forEach(s2 => s2.onchange = () => {
+    const i = +s2.dataset.cf; const c2 = r.conditions[i];
+    c2.field = s2.value; c2.op = opsFor(s2.value)[0];
+    if (s2.value === 'concept') c2.value = (state.concepts && state.concepts[0] || {}).id || '';
+    renderRuleEdit();
+  });
   $$('#ruleEdit [data-co]').forEach(s2 => s2.onchange = () => r.conditions[+s2.dataset.co].op = s2.value);
-  $$('#ruleEdit [data-cv]').forEach(inp => inp.oninput = () => r.conditions[+inp.dataset.cv].value = inp.value);
+  $$('#ruleEdit [data-cv]').forEach(inp => {
+    const set = () => r.conditions[+inp.dataset.cv].value = inp.value;
+    inp.oninput = set; inp.onchange = set;   // select 는 change 로 들어온다
+  });
   $$('#ruleEdit [data-cd]').forEach(b => b.onclick = () => { r.conditions.splice(+b.dataset.cd, 1); renderRuleEdit(); });
   $('#rAddCond').onclick = () => { r.conditions.push({ field: 'name', op: 'contains', value: '' }); renderRuleEdit(); };
   $('#rAction').onchange = e => { r.action = e.target.value; renderRuleEdit(); };
@@ -605,6 +620,6 @@ $('#btnRulesSave').onclick = async () => {
 };
 
 // ---------------------------------------------------------------- 시작
-function start() { initLang(); initDepth(); initVersion(); initFolders(); initStrategies(); initEdition(); initWelcome(); }
+function start() { initLang(); initDepth(); initVersion(); initFolders(); initStrategies(); initConcepts(); initEdition(); initWelcome(); }
 if (wv2 || (window.pywebview && window.pywebview.api)) start(); else { window.addEventListener('pywebviewready', start, { once: true }); setTimeout(() => { if (!window.pywebview) start(); }, 300); }
 window.addEventListener('resize', () => { if (state.flowData && state.step === 4) renderFlow(state.flowData); if (state.step === 3) runDemo(state.strategy); });

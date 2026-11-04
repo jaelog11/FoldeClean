@@ -33,6 +33,8 @@ public sealed class Api
         "rules_save" => RulesSave(Arg(args, 0, new List<Rule>())),
         "rules_test" => RulesTest(Arg(args, 0, new Rule())),
         "dedupe_check" => DedupeCheck(Arg(args, 0, 1024L)),
+        "ontology_concepts" => Ontology.ForPicker(),
+        "ontology_reload" => OntologyReload(),
         "get_progress" => new Dictionary<string, object?> { ["phase"] = _phase, ["count"] = Interlocked.Read(ref _count), ["total"] = Interlocked.Read(ref _total), ["exec"] = _executor.Snapshot() },
         "pick_folder" => PickFolder?.Invoke(),
         "default_folders" => DefaultFolders(),
@@ -90,6 +92,18 @@ public sealed class Api
             return r;
         }
         finally { _phase = "idle"; }
+    }
+
+    /// <summary>사용자가 ontology.json 을 고친 뒤 다시 읽는다. 어디에 두면 되는지도 알려 준다.</summary>
+    static object OntologyReload()
+    {
+        Ontology.Reload();
+        return new Dictionary<string, object?>
+        {
+            ["path"] = Ontology.UserPath,
+            ["exists"] = File.Exists(Ontology.UserPath),
+            ["concepts"] = Ontology.Data.Concepts.Count,
+        };
     }
 
     // ---------------------------------------------------------------- 판 구분과 규칙 (Pro)
@@ -238,8 +252,14 @@ public sealed class Api
         }
         if (!string.IsNullOrEmpty(query))
         {
-            var q = query.ToLowerInvariant();
-            moves = moves.Where(m => m.Name.ToLowerInvariant().Contains(q) || m.DstRel.ToLowerInvariant().Contains(q));
+            // 분류 체계의 동의어로 넓혀서 찾는다. "계약" 으로 계약서·contract 까지 걸린다.
+            var terms = Ontology.ExpandQuery(query).Select(t => t.ToLowerInvariant()).Where(t => t.Length > 0).ToList();
+            if (terms.Count == 0) terms.Add(query.ToLowerInvariant());
+            moves = moves.Where(m =>
+            {
+                var n = m.Name.ToLowerInvariant(); var d = m.DstRel.ToLowerInvariant();
+                return terms.Any(t => n.Contains(t) || d.Contains(t));
+            });
         }
         return moves.ToList();
     }

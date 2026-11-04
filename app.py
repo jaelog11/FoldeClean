@@ -22,9 +22,10 @@ from core import i18n  # noqa: E402
 from core import edition as ed  # noqa: E402
 from core import rules as rl  # noqa: E402
 from core import dupes as dupes_mod  # noqa: E402
+from core import ontology as onto  # noqa: E402
 
 UI_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui")
-VERSION = "0.2"   # C# 판(FoldeClean.csproj의 Version)과 맞춘다
+VERSION = "0.3"   # C# 판(FoldeClean.csproj의 Version)과 맞춘다
 
 
 class Api:
@@ -132,6 +133,13 @@ class Api:
             return {"error": "규칙은 Pro 기능입니다."}
         return {"saved": rl.save(rules or [])}
 
+    def ontology_concepts(self):
+        return onto.for_picker()
+
+    def ontology_reload(self):
+        onto.reload()
+        return {"path": onto.USER_PATH, "exists": os.path.exists(onto.USER_PATH), "concepts": len(onto.data()["concepts"])}
+
     def rules_test(self, rule: dict | None = None):
         if self._scan_result is None:
             return {"error": "먼저 폴더를 검사하세요."}
@@ -188,8 +196,10 @@ class Api:
             pre = d + os.sep
             moves = [m for m in moves if m["dst_rel"].lower() == d or m["dst_rel"].lower().startswith(pre)]
         if query:
-            q = query.lower()
-            moves = [m for m in moves if q in m["name"].lower() or q in m["dst_rel"].lower()]
+            # 분류 체계의 동의어로 넓혀서 찾는다
+            terms = [t.lower() for t in onto.expand_query(query) if t] or [query.lower()]
+            moves = [m for m in moves
+                     if any(t in m["name"].lower() or t in m["dst_rel"].lower() for t in terms)]
         return moves
 
     def plan_moves(self, offset: int = 0, limit: int = 500, query: str = "", dest: str = ""):

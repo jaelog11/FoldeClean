@@ -9,9 +9,9 @@ namespace FoldeClean;
 /// <summary>규칙 조건 하나. 한 규칙 안의 조건은 모두 만족해야 한다(AND).</summary>
 public sealed class RuleCondition
 {
-    /// <summary>name | ext | size | age | dir | path</summary>
+    /// <summary>name | ext | size | age | dir | path | concept</summary>
     [JsonPropertyName("field")] public string Field { get; set; } = "name";
-    /// <summary>contains | not_contains | equals | starts | ends | regex | gt | lt</summary>
+    /// <summary>contains | not_contains | equals | starts | ends | regex | gt | lt | is | is_not</summary>
     [JsonPropertyName("op")] public string Op { get; set; } = "contains";
     [JsonPropertyName("value")] public string Value { get; set; } = "";
 
@@ -26,10 +26,24 @@ public sealed class RuleCondition
                 "ext" => Text(f.Ext),
                 "dir" => Text(Path.GetFileName(Path.GetDirectoryName(f.Path) ?? "")),
                 "path" => Text(f.Path),
+                "concept" => ConceptMatch(f),
                 _ => Text(f.Name),
             };
         }
         catch { return false; }   // 잘못된 정규식 등은 '맞지 않음'으로 처리
+    }
+
+    /// <summary>
+    /// 개념 조건. "문서" 를 고르면 그 아래 계약서·영수증도 함께 걸린다(상위 개념 포함).
+    /// 확장자를 일일이 적지 않아도 되는 것이 이 조건의 쓸모다.
+    /// </summary>
+    bool ConceptMatch(FileRec f)
+    {
+        var want = (Value ?? "").Trim();
+        if (want.Length == 0) return false;
+        var mine = Ontology.ConceptsOf(f);
+        bool hit = mine.Any(c => Ontology.IsA(c, want));
+        return Op == "is_not" ? !hit : hit;
     }
 
     bool Number(double actual)
@@ -116,6 +130,7 @@ public sealed class RuleSet
             .Replace("{day}", t.ToString("dd"))
             .Replace("{ext}", f.Ext)
             .Replace("{category}", Categories.Of(f).label)
+            .Replace("{concept}", Ontology.Label(Ontology.ConceptsOf(f).Last()))   // 가장 세부적인 개념 이름
             .Replace("{dir}", System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(f.Path) ?? ""));
     }
 

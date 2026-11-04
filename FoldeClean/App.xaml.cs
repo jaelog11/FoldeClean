@@ -50,6 +50,26 @@ public partial class App : Application
                 plans[id] = Planner.Build(scan.Files, root, Strategies.Make(id, new()), false, new(), 0).Summary;
             log["plans"] = plans;
 
+            // 분류 체계(ontology.json): 기존 분류가 그대로인지 + 개념 조건·동의어가 되는지
+            var fakeDoc = new FileRec { Path = Path.Combine(root, "2024_계약서_최종.pdf"), Name = "2024_계약서_최종.pdf", Ext = "pdf" };
+            var fakeShot = new FileRec { Path = Path.Combine(root, "Screenshot_2024.png"), Name = "Screenshot_2024.png", Ext = "png" };
+            var docRule = new Rule { Id = "o1", Name = "개념 문서", Action = "folder", Value = "x",
+                Conditions = new() { new RuleCondition { Field = "concept", Op = "is", Value = "documents" } } };
+            log["ontology"] = new Dictionary<string, object?>
+            {
+                ["concepts"] = Ontology.Data.Concepts.Count,
+                ["ext_pdf_top"] = Ontology.TopIdOf("pdf"),
+                ["ext_unknown_top"] = Ontology.TopIdOf("zzz"),
+                ["contract_concepts"] = string.Join(",", Ontology.ConceptsOf(fakeDoc)),
+                ["screenshot_concepts"] = string.Join(",", Ontology.ConceptsOf(fakeShot)),
+                ["contract_is_document"] = Ontology.IsA("contracts", "documents"),
+                ["contract_is_image"] = Ontology.IsA("contracts", "images"),
+                // 상위 개념 조건이 그 아래 세부 개념까지 잡는가
+                ["concept_rule_hits"] = scan.Files.Count(f => docRule.Matches(f, root)),
+                ["category_doc_count"] = scan.Files.Count(f => Categories.Of(f).key == "documents"),
+                ["synonym_ko_en_same"] = Ontology.ExpandQuery("영수증").Contains("invoice", StringComparer.OrdinalIgnoreCase),
+            };
+
             // 중복 예상(크기만)과 실제(내용 읽기) 비교 — 예상은 항상 실제보다 크거나 같아야 한다
             var hint = Dupes.SizeHint(scan.Files);
             var exact = Dupes.ExactCheck(scan.Files, 1024);

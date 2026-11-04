@@ -10,6 +10,7 @@ import uuid
 from .edition import APPDATA
 from .scanner import FileInfo
 from .strategies import category_of
+from . import ontology as onto
 
 RULES_PATH = os.path.join(APPDATA, "rules.json")
 _TEXT_FIELDS = {"name", "ext", "dir", "path"}
@@ -29,10 +30,21 @@ def _field_value(f: FileInfo, field: str):
     return f.name
 
 
+def _concept_match(c: dict, f: FileInfo) -> bool:
+    """개념 조건. 상위 개념을 고르면 그 아래 세부 개념도 함께 걸린다."""
+    want = (c.get("value") or "").strip()
+    if not want:
+        return False
+    hit = any(onto.is_a(x, want) for x in onto.concepts_of(f))
+    return (not hit) if c.get("op") == "is_not" else hit
+
+
 def _match_cond(c: dict, f: FileInfo) -> bool:
     field = c.get("field", "name")
     op = c.get("op", "contains")
     val = c.get("value", "") or ""
+    if field == "concept":
+        return _concept_match(c, f)
     try:
         actual = _field_value(f, field)
         if field in ("size", "age"):
@@ -72,6 +84,7 @@ def expand(template: str, f: FileInfo) -> str:
             .replace("{day}", t.strftime("%d"))
             .replace("{ext}", f.ext)
             .replace("{category}", label)
+            .replace("{concept}", onto.label(onto.concepts_of(f)[-1]))
             .replace("{dir}", os.path.basename(os.path.dirname(f.path))))
     # 앞뒤 공백은 지우지 않는다. 이름 앞뒤에 붙일 때 공백이 의도된 값일 수 있다.
 

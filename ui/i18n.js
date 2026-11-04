@@ -2,6 +2,8 @@
 'use strict';
 const I18N = {
 ko: {
+  'field.concept': '개념(분류)', 'op.is': '임', 'op.is_not': '아님',
+  'rules.conceptHelp': '개념을 고르면 확장자를 일일이 적지 않아도 됩니다. 상위 개념(문서)을 고르면 그 아래(계약서·영수증)도 함께 걸립니다.',
   'p4.refresh': '다시 검사', 'p4.refresh.s': '미리보기를 만든 뒤 탐색기에서 파일을 지우거나 옮겼다면 눌러서 목록을 맞추세요.',
   'p4.refresh.need': '먼저 폴더를 검사하고 미리보기를 만드세요.', 'p4.refreshed': '다시 검사했습니다. 이동 대상 {n}개',
   'busy.refresh': '다시 검사하는 중…',
@@ -51,7 +53,7 @@ ko: {
   'rules.testneed': '먼저 폴더를 검사하면 시험해 볼 수 있습니다.', 'rules.testhit': '{n}개 파일이 이 규칙에 걸립니다',
   'rules.help': '위에 있는 규칙이 먼저 적용되고, 한 파일에는 규칙 하나만 적용됩니다. 규칙에 걸리지 않은 파일은 고른 정리 방식대로 갑니다.',
   'rules.summary': '규칙 {n}개 사용 중', 'rules.summary0': '규칙 없음', 'rules.newname': '새 규칙',
-  'rules.tokens': '폴더 값에 쓸 수 있는 치환자: {year} {month} {day} {ext} {category} {dir}',
+  'rules.tokens': '폴더 값에 쓸 수 있는 치환자: {year} {month} {day} {ext} {category} {concept} {dir}',
   'field.name': '파일 이름', 'field.ext': '확장자', 'field.size': '크기(바이트)', 'field.age': '지난 날수', 'field.dir': '상위 폴더 이름', 'field.path': '전체 경로',
   'op.contains': '포함', 'op.not_contains': '포함하지 않음', 'op.equals': '같음', 'op.starts': '로 시작', 'op.ends': '로 끝남', 'op.regex': '정규식', 'op.gt': '보다 큼', 'op.lt': '보다 작음',
   'act.folder': '이 폴더로 보내기', 'act.skip': '옮기지 않기', 'act.prefix': '이름 앞에 붙이기', 'act.suffix': '이름 뒤에 붙이기',
@@ -110,6 +112,8 @@ ko: {
   'demo.keep': '(그대로)', 'demo.orig': '(원본 유지)',
 },
 en: {
+  'field.concept': 'Concept (category)', 'op.is': 'is', 'op.is_not': 'is not',
+  'rules.conceptHelp': 'Pick a concept instead of listing extensions. Choosing a parent (Documents) also matches what is under it (Contracts, Receipts).',
   'p4.refresh': 'Rescan', 'p4.refresh.s': 'If you deleted or moved files in Explorer after building this preview, press this to bring the list up to date.',
   'p4.refresh.need': 'Scan a folder and build a preview first.', 'p4.refreshed': 'Rescanned. {n} files to move.',
   'busy.refresh': 'Rescanning…',
@@ -159,7 +163,7 @@ en: {
   'rules.testneed': 'Scan a folder first to test rules against it.', 'rules.testhit': '{n} files match this rule',
   'rules.help': 'Rules higher in the list win, and only one rule applies per file. Files that match no rule follow the chosen method.',
   'rules.summary': '{n} rules active', 'rules.summary0': 'No rules', 'rules.newname': 'New rule',
-  'rules.tokens': 'Placeholders for the folder value: {year} {month} {day} {ext} {category} {dir}',
+  'rules.tokens': 'Placeholders for the folder value: {year} {month} {day} {ext} {category} {concept} {dir}',
   'field.name': 'File name', 'field.ext': 'Extension', 'field.size': 'Size (bytes)', 'field.age': 'Days since modified', 'field.dir': 'Parent folder name', 'field.path': 'Full path',
   'op.contains': 'contains', 'op.not_contains': 'does not contain', 'op.equals': 'equals', 'op.starts': 'starts with', 'op.ends': 'ends with', 'op.regex': 'regex', 'op.gt': 'greater than', 'op.lt': 'less than',
   'act.folder': 'Send to this folder', 'act.skip': 'Do not move', 'act.prefix': 'Add before the name', 'act.suffix': 'Add after the name',
@@ -218,6 +222,8 @@ en: {
   'demo.keep': '(stays)', 'demo.orig': '(original kept)',
 },
 zh: {
+  'field.concept': '概念（分类）', 'op.is': '属于', 'op.is_not': '不属于',
+  'rules.conceptHelp': '选择概念就不必逐一列出扩展名。选择上位概念（文档）时，其下的（合同、收据）也会一并匹配。',
   'p4.refresh': '重新检查', 'p4.refresh.s': '如果生成预览后在资源管理器中删除或移动了文件，请点击以更新列表。',
   'p4.refresh.need': '请先检查文件夹并生成预览。', 'p4.refreshed': '已重新检查，待移动 {n} 个。',
   'busy.refresh': '正在重新检查…',
@@ -267,7 +273,7 @@ zh: {
   'rules.testneed': '请先检查文件夹，然后才能测试规则。', 'rules.testhit': '有 {n} 个文件符合此规则',
   'rules.help': '排在上面的规则优先，每个文件只应用一条规则。未匹配的文件按所选方式整理。',
   'rules.summary': '已启用 {n} 条规则', 'rules.summary0': '暂无规则', 'rules.newname': '新规则',
-  'rules.tokens': '文件夹值可用的占位符：{year} {month} {day} {ext} {category} {dir}',
+  'rules.tokens': '文件夹值可用的占位符：{year} {month} {day} {ext} {category} {concept} {dir}',
   'field.name': '文件名', 'field.ext': '扩展名', 'field.size': '大小（字节）', 'field.age': '距今天数', 'field.dir': '上级文件夹名', 'field.path': '完整路径',
   'op.contains': '包含', 'op.not_contains': '不包含', 'op.equals': '等于', 'op.starts': '开头是', 'op.ends': '结尾是', 'op.regex': '正则表达式', 'op.gt': '大于', 'op.lt': '小于',
   'act.folder': '送到此文件夹', 'act.skip': '不移动', 'act.prefix': '在名称前添加', 'act.suffix': '在名称后添加',
@@ -326,6 +332,8 @@ zh: {
   'demo.keep': '（保持）', 'demo.orig': '（保留原件）',
 },
 ja: {
+  'field.concept': '概念（分類）', 'op.is': 'である', 'op.is_not': 'ではない',
+  'rules.conceptHelp': '概念を選べば拡張子を並べる必要がありません。上位概念（書類）を選ぶと、その下（契約書・領収書）も一緒に該当します。',
   'p4.refresh': '再検査', 'p4.refresh.s': 'プレビュー作成後にエクスプローラーでファイルを削除・移動した場合は、押して一覧を合わせてください。',
   'p4.refresh.need': '先にフォルダを検査してプレビューを作成してください。', 'p4.refreshed': '再検査しました。移動対象 {n} 件。',
   'busy.refresh': '再検査中…',
@@ -375,7 +383,7 @@ ja: {
   'rules.testneed': '先にフォルダを検査すると試せます。', 'rules.testhit': '{n} 件のファイルがこのルールに該当します',
   'rules.help': '上にあるルールが優先され、1 ファイルに適用されるルールは 1 つだけです。どれにも該当しないファイルは選んだ方法に従います。',
   'rules.summary': 'ルール {n} 件を使用中', 'rules.summary0': 'ルールなし', 'rules.newname': '新しいルール',
-  'rules.tokens': 'フォルダ値に使える置換子: {year} {month} {day} {ext} {category} {dir}',
+  'rules.tokens': 'フォルダ値に使える置換子: {year} {month} {day} {ext} {category} {concept} {dir}',
   'field.name': 'ファイル名', 'field.ext': '拡張子', 'field.size': 'サイズ（バイト）', 'field.age': '経過日数', 'field.dir': '親フォルダ名', 'field.path': 'フルパス',
   'op.contains': 'を含む', 'op.not_contains': 'を含まない', 'op.equals': 'と等しい', 'op.starts': 'で始まる', 'op.ends': 'で終わる', 'op.regex': '正規表現', 'op.gt': 'より大きい', 'op.lt': 'より小さい',
   'act.folder': 'このフォルダへ送る', 'act.skip': '移動しない', 'act.prefix': '名前の前に付ける', 'act.suffix': '名前の後に付ける',
