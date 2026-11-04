@@ -37,7 +37,8 @@ $mdir = "$rel\manifests\j\Jaelog\FoldeClean\$wver"; New-Item -ItemType Directory
 Get-ChildItem "$here\winget\*.yaml" | ForEach-Object {
     $txt = [IO.File]::ReadAllText($_.FullName, [Text.Encoding]::UTF8)
     $txt = $txt.Replace('__VERSION__', $wver).Replace('__GITHUB_USER__', $GitHubUser).Replace('__SHA256__', $sha)
-    $txt = ($txt -split "`n" | Where-Object { $_ -notmatch '^\s*#' }) -join "`n"
+    # 설명용 주석만 걷어내고, winget 이 권장하는 스키마 헤더(# yaml-language-server:)는 남긴다
+    $txt = ($txt -split "`n" | Where-Object { $_ -notmatch '^\s*#' -or $_ -match 'yaml-language-server' }) -join "`n"
     [IO.File]::WriteAllText("$mdir\$($_.Name)", $txt, (New-Object Text.UTF8Encoding $false))
 }
 Write-Host "   $mdir"

@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.12.0.schema.json
 # winget 설치 매니페스트. release.cmd 가 버전·주소·해시를 채운다.
 # 제출: https://github.com/microsoft/winget-pkgs  (manifests/j/Jaelog/FoldeClean/<버전>/ 에 세 파일)
 PackageIdentifier: Jaelog.FoldeClean
@@ -15,4 +16,4 @@ Dependencies:
   PackageDependencies:
     - PackageIdentifier: Microsoft.DotNet.DesktopRuntime.10
 ManifestType: installer
-ManifestVersion: 1.6.0
+ManifestVersion: 1.12.0
